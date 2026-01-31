@@ -1,0 +1,815 @@
+[dotenv@17.2.3] injecting env (4) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+✅ MongoDB Connected
+🚀 Server running on port 5001
+Accessible at http://0.0.0.0:5001
+
+[2026-01-28T18:33:49.005Z] POST /api/upload
+✅ File uploaded: http://localhost:5001/uploads/campaigns/campaign-1769625229018-724434484.jpg
+
+[2026-01-28T18:34:26.234Z] POST /api/auth/login
+👉 Login Request: undefined
+❌ User not found
+
+[2026-01-28T18:34:27.104Z] POST /api/auth/login
+👉 Login Request: undefined
+❌ User not found
+
+[2026-01-28T18:34:28.702Z] POST /api/auth/login
+👉 Login Request: undefined
+❌ User not found
+
+[2026-01-28T18:34:29.435Z] POST /api/auth/login
+👉 Login Request: undefined
+❌ User not found
+
+[2026-01-28T18:34:29.622Z] POST /api/auth/login
+👉 Login Request: undefined
+❌ User not found
+
+[2026-01-28T18:34:30.068Z] POST /api/auth/login
+👉 Login Request: undefined
+❌ User not found
+
+[2026-01-28T18:34:30.268Z] POST /api/auth/login
+👉 Login Request: undefined
+❌ User not found
+
+[2026-01-28T18:34:42.409Z] GET /uploads/campaigns/campaign-1769624826727-497679549.jpg
+
+[2026-01-28T18:34:42.415Z] GET /uploads/campaigns/campaign-1769623559843-932399054.jpg
+
+[2026-01-28T18:34:43.848Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769624674,
+  exp: 1770229474
+}
+
+[2026-01-28T18:34:57.779Z] POST /api/auth/login
+👉 Login Request: 5424490702
+
+[2026-01-28T18:34:57.920Z] GET /api/customer/profile
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T18:34:58.082Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T18:34:58.099Z] GET /api/wallet/explore
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T18:34:58.106Z] GET /api/campaigns
+   Auth: Bearer token present
+
+[2026-01-28T18:34:58.107Z] GET /api/campaigns/business/69788dc0976234b2ef7354ab
+   Auth: Bearer token present
+
+[2026-01-28T18:35:53.486Z] POST /api/auth/login
+👉 Login Request: undefined
+❌ User not found
+
+[2026-01-28T18:35:54.269Z] POST /api/auth/login
+👉 Login Request: undefined
+❌ User not found
+
+[2026-01-28T18:57:27.234Z] GET /uploads/campaigns/campaign-1769624826727-497679549.jpg
+
+[2026-01-28T18:57:27.243Z] GET /api/campaigns/business/69788dc0976234b2ef7354ab
+   Auth: Bearer token present
+
+[2026-01-28T18:57:27.249Z] GET /uploads/campaigns/campaign-1769623559843-932399054.jpg
+
+[2026-01-28T18:57:28.885Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T18:57:33.299Z] GET /api/campaigns/business/69788dc0976234b2ef7354ab
+   Auth: Bearer token present
+
+[2026-01-28T18:57:34.512Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T18:57:35.422Z] GET /api/campaigns/business/69788dc0976234b2ef7354ab
+   Auth: Bearer token present
+
+[2026-01-28T18:57:35.435Z] GET /uploads/campaigns/campaign-1769624826727-497679549.jpg
+
+[2026-01-28T18:57:35.436Z] GET /uploads/campaigns/campaign-1769623559843-932399054.jpg
+
+[2026-01-28T18:57:36.221Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T18:57:46.572Z] GET /api/wallet/explore
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T18:57:46.578Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T18:57:46.581Z] GET /api/wallet/explore/newest
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T18:57:47.557Z] POST /api/wallet/add
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+👉 Add Wallet Request: {
+  customerId: '6972a5c811eef318a97d49ae',
+  businessId: '69788dbf976234b2ef735499'
+}
+✅ Added to wallet: 697a5c2b8011a2e2de899ab4 (Index: 2)
+
+[2026-01-28T18:57:49.648Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T18:57:50.639Z] GET /api/campaigns/business/69788dbf976234b2ef735499
+   Auth: Bearer token present
+
+[2026-01-28T18:57:51.786Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T18:58:02.475Z] GET /uploads/campaigns/campaign-1769624826727-497679549.jpg
+
+[2026-01-28T18:58:02.477Z] GET /uploads/campaigns/campaign-1769623559843-932399054.jpg
+
+[2026-01-28T18:58:02.478Z] GET /api/campaigns/business/69788dc0976234b2ef7354ab
+   Auth: Bearer token present
+
+[2026-01-28T18:58:03.665Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T18:58:04.316Z] GET /api/campaigns/business/69788dc0976234b2ef7354ab
+   Auth: Bearer token present
+
+[2026-01-28T18:58:04.316Z] GET /uploads/campaigns/campaign-1769624826727-497679549.jpg
+
+[2026-01-28T18:58:04.316Z] GET /uploads/campaigns/campaign-1769623559843-932399054.jpg
+
+[2026-01-28T18:58:05.038Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T19:07:14.443Z] GET /uploads/campaigns/campaign-1769624826727-497679549.jpg
+
+[2026-01-28T19:07:14.455Z] GET /uploads/campaigns/campaign-1769623559843-932399054.jpg
+
+[2026-01-28T19:07:14.457Z] GET /api/campaigns/business/69788dc0976234b2ef7354ab
+   Auth: Bearer token present
+
+[2026-01-28T19:07:15.596Z] GET /api/wallet/explore/69788dc0976234b2ef7354ab
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T19:07:15.621Z] GET /uploads/campaigns/campaign-1769624826727-497679549.jpg
+
+[2026-01-28T19:07:16.108Z] GET /uploads/campaigns/campaign-1769623559843-932399054.jpg
+
+[2026-01-28T19:07:16.109Z] GET /uploads/campaigns/campaign-1769624826727-497679549.jpg
+
+[2026-01-28T19:07:16.517Z] POST /api/participations/join/697a54fa7cf3c33aca7833e3
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T19:07:16.561Z] GET /api/participations/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T19:07:28.813Z] GET /uploads/campaigns/campaign-1769624826727-497679549.jpg
+
+[2026-01-28T19:07:28.816Z] GET /uploads/campaigns/campaign-1769623559843-932399054.jpg
+
+[2026-01-28T19:08:38.194Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T19:08:39.008Z] GET /api/campaigns/business/69788dc0976234b2ef7354ab
+   Auth: Bearer token present
+
+[2026-01-28T19:08:39.017Z] GET /uploads/campaigns/campaign-1769624826727-497679549.jpg
+
+[2026-01-28T19:08:39.018Z] GET /uploads/campaigns/campaign-1769623559843-932399054.jpg
+
+[2026-01-28T19:08:40.794Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T19:12:22.466Z] GET /api/dashboard/stats
+
+[2026-01-28T19:12:36.424Z] GET /api/dashboard/stats
+
+[2026-01-28T19:12:38.345Z] GET /api/dashboard/stats
+
+[2026-01-28T19:18:56.725Z] GET /api/dashboard/stats
+
+[2026-01-28T19:19:14.485Z] GET /api/customer/profile
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T19:19:19.550Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T19:19:19.600Z] GET /api/wallet/explore
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T19:19:19.609Z] GET /api/campaigns
+   Auth: Bearer token present
+
+[2026-01-28T19:19:19.610Z] GET /api/campaigns/business/69788dc0976234b2ef7354ab
+   Auth: Bearer token present
+
+[2026-01-28T19:19:19.621Z] GET /api/campaigns/business/69788dbf976234b2ef735499
+   Auth: Bearer token present
+
+[2026-01-28T19:20:13.934Z] GET /api/dashboard/stats
+
+[2026-01-28T19:20:26.390Z] GET /api/dashboard/stats
+
+[2026-01-28T19:20:43.491Z] POST /api/auth/login
+👉 Login Request: undefined
+❌ User not found
+
+[2026-01-28T19:20:44.508Z] POST /api/auth/login
+👉 Login Request: undefined
+❌ User not found
+
+[2026-01-28T19:20:45.024Z] POST /api/auth/login
+👉 Login Request: undefined
+❌ User not found
+
+[2026-01-28T19:20:50.409Z] POST /api/auth/login
+👉 Login Request: undefined
+❌ User not found
+
+[2026-01-28T19:20:56.464Z] POST /api/auth/login
+👉 Login Request: undefined
+❌ User not found
+
+[2026-01-28T19:20:57.101Z] POST /api/auth/login
+👉 Login Request: undefined
+❌ User not found
+
+[2026-01-28T19:20:58.784Z] POST /api/auth/login
+👉 Login Request: undefined
+❌ User not found
+
+[2026-01-28T19:21:53.770Z] POST /api/auth/login
+👉 Login Request: undefined
+❌ User not found
+
+[2026-01-28T19:25:07.776Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T19:25:07.809Z] GET /api/wallet/explore
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T19:25:07.812Z] GET /api/campaigns
+   Auth: Bearer token present
+
+[2026-01-28T19:25:09.962Z] GET /api/campaigns/business/69788dc0976234b2ef7354ab
+   Auth: Bearer token present
+
+[2026-01-28T19:25:09.980Z] GET /uploads/campaigns/campaign-1769624826727-497679549.jpg
+
+[2026-01-28T19:25:09.980Z] GET /uploads/campaigns/campaign-1769623559843-932399054.jpg
+
+[2026-01-28T19:25:10.012Z] GET /uploads/campaigns/campaign-1769628303255-437387749.jpeg
+
+[2026-01-28T19:25:10.024Z] GET /uploads/campaigns/campaign-1769624826727-497679549.jpg
+
+[2026-01-28T19:25:13.853Z] GET /uploads/campaigns/campaign-1769628303255-437387749.jpeg
+
+[2026-01-28T19:25:13.859Z] GET /api/wallet/explore/69788dc0976234b2ef7354ab
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T19:25:13.864Z] GET /api/participations/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T19:25:14.257Z] GET /uploads/campaigns/campaign-1769628303255-437387749.jpeg
+
+[2026-01-28T19:25:14.257Z] GET /uploads/campaigns/campaign-1769623559843-932399054.jpg
+
+[2026-01-28T19:25:14.257Z] GET /uploads/campaigns/campaign-1769624826727-497679549.jpg
+
+[2026-01-28T19:25:15.595Z] GET /uploads/campaigns/campaign-1769628303255-437387749.jpeg
+
+[2026-01-28T19:25:15.595Z] GET /uploads/campaigns/campaign-1769623559843-932399054.jpg
+
+[2026-01-28T19:25:15.596Z] GET /uploads/campaigns/campaign-1769624826727-497679549.jpg
+
+[2026-01-28T19:40:30.532Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769625297,
+  exp: 1770230097
+}
+
+[2026-01-28T19:40:46.019Z] POST /api/auth/login
+👉 Login Request: 5424490702
+
+[2026-01-28T19:40:46.149Z] GET /api/customer/profile
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T19:40:46.314Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T19:40:46.329Z] GET /api/wallet/explore
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T19:40:46.335Z] GET /api/campaigns
+   Auth: Bearer token present
+
+[2026-01-28T19:40:46.337Z] GET /api/campaigns/business/69788dc0976234b2ef7354ab
+   Auth: Bearer token present
+
+[2026-01-28T19:40:46.347Z] GET /api/campaigns/business/69788dbf976234b2ef735499
+   Auth: Bearer token present
+
+[2026-01-28T19:54:50.249Z] GET /api/campaigns/business/69788dbf976234b2ef735499
+   Auth: Bearer token present
+
+[2026-01-28T19:54:51.360Z] GET /api/wallet/explore/69788dbf976234b2ef735499
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T19:55:15.865Z] POST /api/participations/join/6978938ab3153f99f7c78a28
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T19:55:15.907Z] GET /api/participations/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T20:26:29.922Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T20:26:32.380Z] GET /api/wallet/explore
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T20:26:32.396Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T20:26:32.398Z] GET /api/wallet/explore/newest
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T20:26:34.447Z] POST /api/wallet/add
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+👉 Add Wallet Request: {
+  customerId: '6972a5c811eef318a97d49ae',
+  businessId: '697a6461e2c3de78dcd29953'
+}
+✅ Added to wallet: 697a70fa8011a2e2de899b02 (Index: 3)
+
+[2026-01-28T20:26:36.515Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T20:36:01.168Z] GET /api/campaigns/business/697a6461e2c3de78dcd29953
+   Auth: Bearer token present
+
+[2026-01-28T20:41:33.736Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T20:41:39.185Z] GET /api/campaigns/business/697a6461e2c3de78dcd29953
+   Auth: Bearer token present
+
+[2026-01-28T20:41:40.574Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T20:49:27.142Z] GET /api/campaigns/business/697a6461e2c3de78dcd29953
+   Auth: Bearer token present
+
+[2026-01-28T20:49:28.998Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T20:49:34.925Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T20:50:53.388Z] GET /api/customer/profile
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T20:51:01.645Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T20:51:01.741Z] GET /api/wallet/explore
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T20:51:01.776Z] GET /api/campaigns
+   Auth: Bearer token present
+
+[2026-01-28T20:51:01.779Z] GET /api/campaigns/business/69788dc0976234b2ef7354ab
+   Auth: Bearer token present
+
+[2026-01-28T20:51:01.780Z] GET /api/campaigns/business/69788dbf976234b2ef735499
+   Auth: Bearer token present
+
+[2026-01-28T20:51:01.785Z] GET /api/campaigns/business/697a6461e2c3de78dcd29953
+   Auth: Bearer token present
+
+[2026-01-28T20:51:15.934Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T20:51:27.914Z] POST /api/wallet/remove
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+✅ Removed from wallet: 697a6461e2c3de78dcd29953 (Index: 3 -> Auto-Balanced)
+🧹 Cleared transaction history for business: 697a6461e2c3de78dcd29953
+
+[2026-01-28T20:51:28.426Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T20:51:32.083Z] GET /api/wallet/explore
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T20:51:32.083Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T20:51:32.084Z] GET /api/wallet/explore/newest
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T20:51:33.276Z] POST /api/wallet/add
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+👉 Add Wallet Request: {
+  customerId: '6972a5c811eef318a97d49ae',
+  businessId: '697a6461e2c3de78dcd29953'
+}
+✅ Added to wallet: 697a76d58011a2e2de899b28 (Index: 3)
+
+[2026-01-28T20:51:40.058Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T21:07:42.268Z] GET /api/campaigns/business/697a6461e2c3de78dcd29953
+   Auth: Bearer token present
+
+[2026-01-28T21:07:51.052Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T21:07:51.801Z] GET /api/campaigns/business/697a6461e2c3de78dcd29953
+   Auth: Bearer token present
+
+[2026-01-28T21:08:55.494Z] GET /api/customer/profile
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T21:09:04.418Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T21:09:04.609Z] GET /api/wallet/explore
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
+
+[2026-01-28T21:09:04.623Z] GET /api/campaigns
+   Auth: Bearer token present
+
+[2026-01-28T21:09:04.668Z] GET /api/campaigns/business/69788dc0976234b2ef7354ab
+   Auth: Bearer token present
+
+[2026-01-28T21:09:04.669Z] GET /api/campaigns/business/69788dbf976234b2ef735499
+   Auth: Bearer token present
+
+[2026-01-28T21:09:04.669Z] GET /api/campaigns/business/697a6461e2c3de78dcd29953
+   Auth: Bearer token present
+
+[2026-01-28T21:15:35.322Z] GET /api/campaigns/business/69788dc0976234b2ef7354ab
+   Auth: Bearer token present
+
+[2026-01-28T21:15:35.355Z] GET /uploads/campaigns/campaign-1769628303255-437387749.jpeg
+
+[2026-01-28T21:15:35.357Z] GET /uploads/campaigns/campaign-1769623559843-932399054.jpg
+
+[2026-01-28T21:15:35.357Z] GET /uploads/campaigns/campaign-1769624826727-497679549.jpg
+
+[2026-01-28T21:15:36.817Z] GET /api/wallet/my
+   Auth: Bearer token present
+   ✅ Auth verified, user: {
+  id: '6972a5c811eef318a97d49ae',
+  role: 'customer',
+  iat: 1769629246,
+  exp: 1770234046
+}
