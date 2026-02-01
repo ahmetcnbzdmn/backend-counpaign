@@ -73,20 +73,43 @@ exports.getBusinessGifts = async (req, res) => {
 // 7a. Prepare Redemption (Generate QR) - Customer
 exports.prepareRedemption = async (req, res) => {
     try {
-        const { businessId, giftId } = req.body;
+        const { businessId, giftId, redemptionType } = req.body; // redemptionType: 'POINT' or 'GIFT_ENTITLEMENT'
         const customerId = req.user.id;
 
-        const gift = await Gift.findOne({ _id: giftId, business: businessId });
-        if (!gift) return res.status(404).json({ message: 'Hediye bulunamadı.' });
-
+        let meta = {};
         const walletItem = await CustomerBusiness.findOne({ customer: customerId, business: businessId });
-        if (!walletItem || walletItem.points < gift.pointCost) {
-            return res.status(400).json({ message: 'Yetersiz puan.' });
+
+        if (!walletItem) return res.status(404).json({ message: 'Cüzdan bulunamadı.' });
+
+        if (redemptionType === 'GIFT_ENTITLEMENT') {
+            // Check if user has free gift rights (from stamps)
+            if (!walletItem.giftsCount || walletItem.giftsCount < 1) {
+                return res.status(400).json({ message: 'Hediye hakkınız bulunmuyor.' });
+            }
+            meta = {
+                type: 'GIFT_ENTITLEMENT',
+                title: 'Ücretsiz Hediye Hakkı',
+                pointCost: 0
+            };
+        } else {
+            // Default: Point Redemption
+            const gift = await Gift.findOne({ _id: giftId, business: businessId });
+            if (!gift) return res.status(404).json({ message: 'Hediye bulunamadı.' });
+
+            if (walletItem.points < gift.pointCost) {
+                return res.status(400).json({ message: 'Yetersiz puan.' });
+            }
+            meta = {
+                type: 'POINT',
+                giftId,
+                pointCost: gift.pointCost,
+                title: gift.title
+            };
         }
 
-        // Generate 6-character alphanumeric code for easier manual entry
+        // Generate 6-character alphanumeric code
         const crypto = require('crypto');
-        const code = crypto.randomBytes(3).toString('hex').toUpperCase(); // 6 chars
+        const code = crypto.randomBytes(3).toString('hex').toUpperCase();
 
         const QRToken = require('../models/QRToken');
         await QRToken.create({
@@ -94,13 +117,12 @@ exports.prepareRedemption = async (req, res) => {
             user: customerId,
             business: businessId,
             type: 'gift_redemption',
-            metadata: { giftId, pointCost: gift.pointCost, title: gift.title }
+            metadata: meta
         });
 
         res.json({
             token: code,
-            giftTitle: gift.title,
-            pointCost: gift.pointCost,
+            ...meta,
             expiresIn: 300
         });
     } catch (err) {
@@ -127,11 +149,12 @@ exports.verifyRedemptionCode = async (req, res) => {
             return res.status(404).json({ message: 'Geçersiz veya süresi dolmuş kod.' });
         }
 
-        const { giftId, pointCost, title } = qrToken.metadata;
+        const { type, pointCost, title } = qrToken.metadata;
         const customer = qrToken.user;
 
         res.json({
             isValid: true,
+            redemptionType: type || 'POINT', // 'POINT' or 'GIFT_ENTITLEMENT'
             giftTitle: title,
             pointCost,
             customerName: `${customer.name} ${customer.surname}`,
@@ -158,23 +181,31 @@ exports.completeRedemption = async (req, res) => {
         }).populate('user');
 
         if (!qrToken) {
-            return res.status(404).json({ message: 'Geçersiz veya süresi dolmuş kod (Tekrar kullanım veya zaman aşımı).' });
+            return res.status(404).json({ message: 'Geçersiz kod.' });
         }
 
-        const { giftId, pointCost, title } = qrToken.metadata;
+        const { type, pointCost, title } = qrToken.metadata;
         const customerId = qrToken.user._id;
 
-        // Re-check balance (Double spend prevention)
         const walletItem = await CustomerBusiness.findOne({ customer: customerId, business: businessId });
-        if (!walletItem || walletItem.points < pointCost) {
-            return res.status(400).json({ message: 'Müşterinin puanı artık yetersiz.' });
+        if (!walletItem) return res.status(404).json({ message: 'Cüzdan bulunamadı.' });
+
+        // DEDUCTION LOGIC
+        if (type === 'GIFT_ENTITLEMENT') {
+            if (walletItem.giftsCount < 1) {
+                return res.status(400).json({ message: 'Müşterinin hediye hakkı kalmamış.' });
+            }
+            walletItem.giftsCount -= 1;
+        } else {
+            // Default: Points
+            if (walletItem.points < pointCost) {
+                return res.status(400).json({ message: 'Müşterinin puanı yetersiz.' });
+            }
+            walletItem.points -= pointCost;
         }
 
-        // Deduct Points
-        walletItem.points -= pointCost;
         await walletItem.save();
 
-        // Mark Token Used
         qrToken.status = 'used';
         await qrToken.save();
 
@@ -183,18 +214,18 @@ exports.completeRedemption = async (req, res) => {
             customer: customerId,
             business: businessId,
             type: 'gift_redemption',
-            description: `Hediye Teslimi: ${title}`,
-            pointsEarned: -pointCost,
+            description: type === 'GIFT_ENTITLEMENT' ? 'Hediye Hakkı Kullanımı' : `Hediye Alımı: ${title}`,
+            pointsEarned: type === 'GIFT_ENTITLEMENT' ? 0 : -pointCost,
             stampsEarned: 0
         });
         await tran.save();
 
         res.json({
             success: true,
-            message: 'Hediye teslim edildi.',
+            message: 'Teslimat onaylandı.',
             gift: title,
             customer: `${qrToken.user.name} ${qrToken.user.surname}`,
-            remainingPoints: walletItem.points
+            redemptionType: type
         });
 
     } catch (err) {
