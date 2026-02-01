@@ -144,7 +144,7 @@ exports.adminLogin = async (req, res) => {
                 return res.status(400).json({ error: 'Kullanıcı adı veya şifre hatalı.' });
             }
 
-            const token = generateToken(admin._id);
+            const token = generateToken(admin._id, admin.role);
             res.json({
                 token,
                 user: {
@@ -173,7 +173,7 @@ exports.adminLogin = async (req, res) => {
             return res.status(400).json({ error: 'Kullanıcı adı veya şifre hatalı.' });
         }
 
-        const token = generateToken(business._id);
+        const token = generateToken(business._id, 'business');
         res.json({
             token,
             user: {
