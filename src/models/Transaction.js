@@ -13,17 +13,20 @@ const transactionSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['STAMP', 'POINT', 'GIFT_REDEEM'],
+        enum: ['STAMP', 'POINT', 'GIFT_REDEEM', 'gift_redemption'], // Added gift_redemption
         required: true
     },
     category: {
         type: String,
+        // Allow dynamic categories or expand this enum. 
+        // Admin panel logic sends data that might not fit 'KAZANIM' or 'HARCAMA' strictly if not mapped.
+        // Assuming 'HARCAMA' covers redemption.
         enum: ['KAZANIM', 'HARCAMA'],
         required: true
     },
     value: {
         type: Number,
-        default: 1 // 1 stamp, 10 points etc.
+        default: 0 // Changed default to 0 as pointsEarned handles value
     },
     status: {
         type: String,

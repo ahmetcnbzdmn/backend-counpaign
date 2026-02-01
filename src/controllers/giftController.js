@@ -214,6 +214,7 @@ exports.completeRedemption = async (req, res) => {
             customer: customerId,
             business: businessId,
             type: 'gift_redemption',
+            category: 'HARCAMA', // Explicitly set enum value
             description: type === 'GIFT_ENTITLEMENT' ? 'Hediye Hakkı Kullanımı' : `Hediye Alımı: ${title}`,
             pointsEarned: type === 'GIFT_ENTITLEMENT' ? 0 : -pointCost,
             stampsEarned: 0
