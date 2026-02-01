@@ -6,7 +6,7 @@ const Transaction = require('../models/Transaction');
 exports.createGift = async (req, res) => {
     try {
         const { title, pointCost } = req.body;
-        const businessId = req.user.userId;
+        const businessId = req.user.id;
 
         if (!title || pointCost === undefined) {
             return res.status(400).json({ message: 'Title and Point Cost are required.' });
@@ -29,7 +29,7 @@ exports.createGift = async (req, res) => {
 // Get gifts for the logged-in business
 exports.getMyGifts = async (req, res) => {
     try {
-        const businessId = req.user.userId;
+        const businessId = req.user.id;
         const gifts = await Gift.find({ business: businessId }).sort({ pointCost: 1 });
         res.json(gifts);
     } catch (err) {
@@ -41,7 +41,7 @@ exports.getMyGifts = async (req, res) => {
 // Delete a gift (Business Only)
 exports.deleteGift = async (req, res) => {
     try {
-        const businessId = req.user.userId;
+        const businessId = req.user.id;
         const giftId = req.params.id;
 
         const gift = await Gift.findOneAndDelete({ _id: giftId, business: businessId });
