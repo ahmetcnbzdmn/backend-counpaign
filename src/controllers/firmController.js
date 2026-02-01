@@ -173,23 +173,49 @@ exports.deleteFirm = async (req, res) => {
 // Get dashboard stats
 exports.getDashboardStats = async (req, res) => {
     try {
+        const Transaction = require('../models/Transaction');
+        const Participation = require('../models/Participation');
+
         const totalUsers = await Customer.countDocuments();
         const totalFirms = await Business.countDocuments();
         const totalCampaigns = await Campaign.countDocuments();
         const activeCampaigns = await Campaign.countDocuments({ endDate: { $gte: new Date() } });
 
+        // Transactions
+        const totalTransactions = await Transaction.countDocuments();
+
+        // Simple mock chart for now (or calculate real last 7 days)
+        // For stability, returning empty chart array is safer than code that might fail
+        const transactionChart = [];
+
+        // Participations
+        const totalParticipations = await Participation.countDocuments();
+
         res.json({
             users: {
                 total: totalUsers,
-                new: 0 // You can implement this with a date filter if needed
+                today: 0 // Implement distinct logic if needed
             },
             firms: {
                 total: totalFirms,
-                active: totalFirms // All firms are considered active for now
+                month: 0
             },
             campaigns: {
                 total: totalCampaigns,
                 active: activeCampaigns
+            },
+            transactions: {
+                total: totalTransactions,
+                today: 0,
+                chart: transactionChart
+            },
+            participations: {
+                total: totalParticipations,
+                won: 0
+            },
+            rewards: {
+                points: { earned: 0, spent: 0 },
+                stamps: { earned: 0, spent: 0 }
             }
         });
     } catch (error) {
