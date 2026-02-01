@@ -57,6 +57,7 @@ app.use('/api/transactions', require('./routes/transaction.routes'));
 app.use('/api/campaigns', require('./routes/campaign.routes'));
 app.use('/api/participations', require('./routes/participation.routes'));
 app.use('/api/upload', require('./routes/upload.routes'));
+app.use('/api/gifts', require('./routes/gift.routes')); // Gift system
 
 // 404 Handler for debugging
 // 404 Handler for debugging
