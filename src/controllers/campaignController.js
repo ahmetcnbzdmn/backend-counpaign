@@ -5,10 +5,13 @@ const Campaign = require('../models/Campaign');
 // @access  Private (Business only)
 exports.createCampaign = async (req, res) => {
     try {
+        console.log('📋 Campaign Request body:', req.body);
+        console.log('📁 Campaign Uploaded file:', req.file);
+
         const {
+            businessId,
             title,
             shortDescription,
-            headerImage,
             content,
             rewardType,
             rewardValue,
@@ -20,32 +23,42 @@ exports.createCampaign = async (req, res) => {
             endDate
         } = req.body;
 
-        // Ensure businessId comes from the authenticated business
-        const businessId = req.user.id;
+        // Use businessId from request body (admin panel sends it)
+        // or from authenticated user if not provided
+        const finalBusinessId = businessId || req.user?.id;
+
+        if (!finalBusinessId) {
+            return res.status(400).json({ error: 'Business ID is required' });
+        }
+
+        // Image URL from uploaded file
+        const headerImage = req.file ? `/uploads/${req.file.filename}` : null;
 
         const campaign = new Campaign({
-            businessId,
+            businessId: finalBusinessId,
             title,
             shortDescription,
             headerImage,
             content,
             rewardType,
-            rewardValue,
-            rewardValidityDays,
+            rewardValue: parseInt(rewardValue),
+            rewardValidityDays: parseInt(rewardValidityDays),
             icon,
-            isPromoted,
-            displayOrder,
-            startDate,
-            endDate
+            isPromoted: isPromoted === 'true' || isPromoted === true,
+            displayOrder: parseInt(displayOrder) || 0,
+            startDate: startDate ? new Date(startDate) : new Date(),
+            endDate: endDate ? new Date(endDate) : new Date()
         });
 
         await campaign.save();
 
+        console.log('✅ Campaign created:', title);
         res.status(201).json({
             message: 'Campaign created successfully',
             campaign
         });
     } catch (err) {
+        console.error('Campaign creation error:', err);
         res.status(500).json({ error: 'Failed to create campaign', details: err.message });
     }
 };
@@ -93,25 +106,46 @@ exports.getAllCampaigns = async (req, res) => {
 exports.updateCampaign = async (req, res) => {
     try {
         const { id } = req.params;
-        const businessId = req.user.id; // From authMiddleware
 
-        // Find campaign and ensure it belongs to the business
-        const campaign = await Campaign.findOne({ _id: id, businessId });
+        console.log('✏️ Update campaign request:', id);
+        console.log('   Body:', req.body);
+        console.log('   File:', req.file);
+
+        // Find campaign (no businessId restriction for admin panel)
+        const campaign = await Campaign.findById(id);
 
         if (!campaign) {
-            return res.status(404).json({ error: 'Campaign not found or unauthorized' });
+            return res.status(404).json({ error: 'Campaign not found' });
         }
 
+        // Update fields from request body
         const updates = Object.keys(req.body);
-        updates.forEach((update) => (campaign[update] = req.body[update]));
+        updates.forEach((update) => {
+            if (update === 'rewardValue' || update === 'rewardValidityDays' || update === 'displayOrder') {
+                campaign[update] = parseInt(req.body[update]);
+            } else if (update === 'isPromoted') {
+                campaign[update] = req.body[update] === 'true' || req.body[update] === true;
+            } else if (update === 'startDate' || update === 'endDate') {
+                campaign[update] = new Date(req.body[update]);
+            } else {
+                campaign[update] = req.body[update];
+            }
+        });
+
+        // Update header image if new file uploaded
+        if (req.file) {
+            campaign.headerImage = `/uploads/${req.file.filename}`;
+        }
 
         await campaign.save();
 
+        console.log('✅ Campaign updated:', campaign.title);
         res.json({
             message: 'Campaign updated successfully',
             campaign
         });
     } catch (err) {
+        console.error('Update campaign error:', err);
         res.status(500).json({ error: 'Failed to update campaign', details: err.message });
     }
 };
@@ -122,16 +156,33 @@ exports.updateCampaign = async (req, res) => {
 exports.deleteCampaign = async (req, res) => {
     try {
         const { id } = req.params;
-        const businessId = req.user.id;
 
-        const campaign = await Campaign.findOneAndDelete({ _id: id, businessId });
+        console.log('🗑️ Delete campaign request:', id);
+        console.log('   User:', req.user);
+
+        const campaign = await Campaign.findById(id);
 
         if (!campaign) {
-            return res.status(404).json({ error: 'Campaign not found or unauthorized' });
+            return res.status(404).json({ error: 'Campaign not found' });
         }
 
-        res.json({ message: 'Campaign deleted successfully' });
+        // Delete all participations associated with this campaign (CASCADE DELETE)
+        const Participation = require('../models/Participation');
+        const deletedParticipations = await Participation.deleteMany({ campaign: id });
+        console.log(`🗑️ Deleted ${deletedParticipations.deletedCount} participations for campaign: ${campaign.title}`);
+
+        // Delete the campaign itself
+        await Campaign.findByIdAndDelete(id);
+
+        console.log('✅ Campaign deleted:', campaign.title);
+        res.json({
+            message: 'Campaign and participations deleted successfully',
+            details: {
+                participations: deletedParticipations.deletedCount
+            }
+        });
     } catch (err) {
+        console.error('Delete campaign error:', err);
         res.status(500).json({ error: 'Failed to delete campaign', details: err.message });
     }
 };

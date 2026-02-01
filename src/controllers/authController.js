@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const Customer = require('../models/Customer');
+const Admin = require('../models/Admin');
 // Keeping Business/Terminal imports if needed later, but unified flow uses Customer as User base
 // const Business = require('../models/Business'); 
 // const Terminal = require('../models/Terminal');
@@ -9,6 +10,22 @@ const generateToken = (id) => {
 };
 
 // --- UNIFIED AUTH ---
+
+exports.lookupEmail = async (req, res) => {
+    try {
+        const { phoneNumber } = req.body;
+        const customer = await Customer.findOne({ phoneNumber });
+
+        if (!customer) {
+            return res.status(404).json({ error: 'Bu numara ile kayıtlı kullanıcı bulunamadı.' });
+        }
+
+        res.json({ email: customer.email });
+    } catch (err) {
+        console.error("Lookup Email Error:", err);
+        res.status(500).json({ error: 'Sunucu hatası.' });
+    }
+};
 
 exports.register = async (req, res) => {
     try {
@@ -33,7 +50,7 @@ exports.register = async (req, res) => {
             name,
             surname,
             phoneNumber,
-            email,
+            email: email.toLowerCase(),
             password,
             gender,
             birthDate
@@ -109,3 +126,69 @@ exports.login = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+// --- ADMIN LOGIN ---
+// Supports both Admin users and Business users
+exports.adminLogin = async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        console.log("👉 Admin Login Request:", username);
+
+        // First try Admin model (username-based)
+        let admin = await Admin.findOne({ username });
+
+        if (admin) {
+            const isMatch = await admin.comparePassword(password);
+            if (!isMatch) {
+                console.log("❌ Password mismatch");
+                return res.status(400).json({ error: 'Kullanıcı adı veya şifre hatalı.' });
+            }
+
+            const token = generateToken(admin._id);
+            res.json({
+                token,
+                user: {
+                    id: admin._id,
+                    username: admin.username,
+                    role: admin.role,
+                    businessName: admin.role === 'super_admin' ? 'Super Admin' : 'Admin'
+                }
+            });
+            console.log("✅ Admin logged in successfully:", admin.username);
+            return;
+        }
+
+        // If not found in Admin, try Business model (email-based)
+        const Business = require('../models/Business');
+        const business = await Business.findOne({ email: username });
+
+        if (!business) {
+            console.log("❌ User not found in Admin or Business");
+            return res.status(400).json({ error: 'Kullanıcı adı veya şifre hatalı.' });
+        }
+
+        const isMatch = await business.comparePassword(password);
+        if (!isMatch) {
+            console.log("❌ Password mismatch");
+            return res.status(400).json({ error: 'Kullanıcı adı veya şifre hatalı.' });
+        }
+
+        const token = generateToken(business._id);
+        res.json({
+            token,
+            user: {
+                id: business._id,
+                username: business.email,
+                role: 'business',
+                businessName: business.companyName,
+                businessId: business._id,
+                theme: business.companyName.toLowerCase() // For theme support
+            }
+        });
+        console.log("✅ Business logged in successfully:", business.companyName);
+    } catch (err) {
+        console.error("Admin Login Error:", err);
+        res.status(500).json({ error: err.message });
+    }
+};
+

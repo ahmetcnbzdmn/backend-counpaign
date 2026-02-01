@@ -5,8 +5,10 @@ const rateLimit = require('express-rate-limit');
 
 const app = express();
 
-// Security Middleware
-app.use(helmet());
+// Security Middleware - Configure helmet to allow CORS for uploads
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 app.use(cors());
 const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -43,7 +45,11 @@ app.get('/', (req, res) => {
 
 // Routes
 app.use('/api/auth', require('./routes/auth.routes'));
+app.use('/api/dashboard', require('./routes/dashboard.routes')); // Admin dashboard
 app.use('/api/business', require('./routes/business.routes'));
+app.use('/api/firms', require('./routes/firm.routes')); // Admin panel
+app.use('/api/users', require('./routes/user.routes')); // Admin panel users
+app.use('/api/qr', require('./routes/qr.routes')); // QR system
 app.use('/api/terminal', require('./routes/terminal.routes'));
 app.use('/api/customer', require('./routes/customer.routes'));
 app.use('/api/wallet', require('./routes/wallet.routes'));

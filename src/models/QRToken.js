@@ -9,22 +9,32 @@ const qrTokenSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Customer',
-        required: true
+        required: false // Optional for business tokens
+    },
+    business: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Business',
+        required: false // For business-generated QR codes
     },
     type: {
         type: String,
-        enum: ['login', 'payment', 'campaign'],
+        enum: ['login', 'payment', 'campaign', 'business_scan'],
         default: 'login'
     },
     status: {
         type: String,
-        enum: ['active', 'used', 'expired'],
+        enum: ['active', 'scanned', 'used', 'expired'],
         default: 'active'
+    },
+    scannedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Customer',
+        required: false
     },
     createdAt: {
         type: Date,
         default: Date.now,
-        expires: 300 // 5 minutes TTL (Optional, user didn't specify, but typical for QR tokens)
+        expires: 60 // 60 seconds TTL for business QR tokens
     }
 });
 

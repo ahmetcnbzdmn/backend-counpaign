@@ -19,6 +19,10 @@ const customerSchema = new mongoose.Schema({
         trim: true,
         match: [/^5[0-9]{9}$/, 'Telefon numarası 5 ile başlamalı ve 10 hane olmalıdır.']
     },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
     email: {
         type: String,
         required: true,
