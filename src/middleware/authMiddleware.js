@@ -57,7 +57,7 @@ const authMiddleware = async (req, res, next) => {
 
         } catch (firebaseErr) {
             console.error('Auth failed:', firebaseErr.message); // Keep error log
-            res.status(400).json({ error: 'Invalid token.' });
+            res.status(401).json({ error: 'Invalid token.' });
         }
     }
 };

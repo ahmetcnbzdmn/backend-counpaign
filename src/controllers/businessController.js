@@ -140,7 +140,8 @@ exports.getMyBusinesses = async (req, res) => {
     try {
         const relations = await CustomerBusiness.find({ customer: customerId })
             .populate('business', 'companyName category logo image cardColor cardIcon settings city district neighborhood')
-            .sort({ orderIndex: 1 }); // Sort by orderIndex
+            .sort({ orderIndex: 1 })
+            .lean(); // Optimize performance
 
         // Filter out stale relations (where business was deleted)
         const validRelations = relations.filter(rel => rel.business != null);

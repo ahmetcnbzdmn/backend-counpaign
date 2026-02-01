@@ -61,7 +61,7 @@ exports.deleteGift = async (req, res) => {
 exports.getBusinessGifts = async (req, res) => {
     try {
         const businessId = req.params.businessId;
-        const gifts = await Gift.find({ business: businessId }).sort({ pointCost: 1 });
+        const gifts = await Gift.find({ business: businessId }).sort({ pointCost: 1 }).lean();
         res.json(gifts);
     } catch (err) {
         console.error("Get Business Gifts Error:", err);
