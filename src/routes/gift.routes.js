@@ -12,6 +12,9 @@ router.delete('/:id', businessAuthMiddleware, giftController.deleteGift);
 // Customer Routes (View & Redeem)
 // Note: Customer auth is required for redeeming
 router.get('/business/:businessId', authMiddleware, giftController.getBusinessGifts);
-router.post('/redeem', authMiddleware, giftController.redeemGift);
+router.post('/redeem', authMiddleware, giftController.redeemGift); // Legacy
+router.post('/prepare-redemption', authMiddleware, giftController.prepareRedemption);
+router.post('/verify-redemption', businessAuthMiddleware, giftController.verifyRedemptionCode);
+router.post('/complete-redemption', businessAuthMiddleware, giftController.completeRedemption);
 
 module.exports = router;

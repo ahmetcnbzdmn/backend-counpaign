@@ -18,13 +18,17 @@ const qrTokenSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['login', 'payment', 'campaign', 'business_scan'],
+        enum: ['login', 'payment', 'campaign', 'business_scan', 'gift_redemption'],
         default: 'login'
     },
     status: {
         type: String,
         enum: ['active', 'scanned', 'used', 'expired'],
         default: 'active'
+    },
+    metadata: {
+        type: mongoose.Schema.Types.Mixed, // Flexible metadata (e.g., giftId)
+        default: {}
     },
     scannedBy: {
         type: mongoose.Schema.Types.ObjectId,
@@ -34,7 +38,7 @@ const qrTokenSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now,
-        expires: 60 // 60 seconds TTL for business QR tokens
+        expires: 300 // Increased to 5 minutes (300s) for better UX
     }
 });
 
