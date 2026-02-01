@@ -139,7 +139,7 @@ exports.getMyBusinesses = async (req, res) => {
 
     try {
         const relations = await CustomerBusiness.find({ customer: customerId })
-            .populate('business', 'companyName category logo cardColor cardIcon settings city district neighborhood')
+            .populate('business', 'companyName category logo image cardColor cardIcon settings city district neighborhood')
             .sort({ orderIndex: 1 }); // Sort by orderIndex
 
         // Filter out stale relations (where business was deleted)
@@ -153,6 +153,8 @@ exports.getMyBusinesses = async (req, res) => {
             category: rel.business.category,
             cardColor: rel.business.cardColor,
             cardIcon: rel.business.cardIcon,
+            logo: rel.business.logo, // Add logo
+            image: rel.business.image, // Add image (fallback)
             points: rel.points,
             stamps: rel.stamps,
             stampsTarget: rel.stampsTarget,
