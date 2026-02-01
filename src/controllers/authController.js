@@ -5,8 +5,8 @@ const Admin = require('../models/Admin');
 // const Business = require('../models/Business'); 
 // const Terminal = require('../models/Terminal');
 
-const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
+const generateToken = (id, role = 'customer') => {
+    return jwt.sign({ id, role }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
 };
 
 // --- UNIFIED AUTH ---

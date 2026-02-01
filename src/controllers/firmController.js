@@ -191,10 +191,12 @@ exports.getDashboardStats = async (req, res) => {
         // Participations
         const totalParticipations = await Participation.countDocuments();
 
+        // ... (previous code)
+
         res.json({
             users: {
                 total: totalUsers,
-                today: 0 // Implement distinct logic if needed
+                today: 0
             },
             firms: {
                 total: totalFirms,
@@ -220,6 +222,53 @@ exports.getDashboardStats = async (req, res) => {
         });
     } catch (error) {
         console.error('Get dashboard stats error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Get stats for a specific firm (Business Dashboard)
+exports.getFirmStats = async (req, res) => {
+    try {
+        const { businessId } = req.query;
+        if (!businessId) return res.status(400).json({ error: 'Business ID required' });
+
+        const CustomerBusiness = require('../models/CustomerBusiness');
+        const Participation = require('../models/Participation');
+        const Transaction = require('../models/Transaction');
+
+        // 1. Customer Count (Wallet Adds)
+        const totalCustomers = await CustomerBusiness.countDocuments({ business: businessId });
+
+        // 2. Participations
+        const totalParticipations = await Participation.countDocuments({ businessId });
+
+        // 3. Transactions (Mocked daily/monthly for now)
+        const totalTransactions = await Transaction.countDocuments({ business: businessId });
+
+        // 4. Mock Charts Data (Empty arrays to prevent frontend crash)
+        const walletAdsChart = [];
+        const transactionsChart = [];
+
+        res.json({
+            customers: { total: totalCustomers },
+            participations: { total: totalParticipations },
+            transactions: {
+                daily: 0,
+                monthly: totalTransactions
+            },
+            rewards: {
+                weeklyPoints: 0,
+                weeklyStamps: 0,
+                weeklyCoffee: 0
+            },
+            charts: {
+                walletAdds: walletAdsChart,
+                transactions: transactionsChart
+            }
+        });
+
+    } catch (error) {
+        console.error('Get firm stats error:', error);
         res.status(500).json({ error: error.message });
     }
 };
