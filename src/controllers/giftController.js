@@ -107,6 +107,18 @@ exports.prepareRedemption = async (req, res) => {
             };
         }
 
+        // Invalidate previous active tokens for this user & business & type
+        const QRToken = require('../models/QRToken');
+        await QRToken.updateMany(
+            {
+                user: customerId,
+                business: businessId,
+                type: 'gift_redemption',
+                status: 'active'
+            },
+            { status: 'expired' }
+        );
+
         // Generate 6-character alphanumeric code
         const crypto = require('crypto');
         const code = crypto.randomBytes(3).toString('hex').toUpperCase();
