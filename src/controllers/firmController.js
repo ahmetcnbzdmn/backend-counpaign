@@ -151,16 +151,22 @@ exports.deleteFirm = async (req, res) => {
         );
         console.log(`🗑️ Removed firm from ${result.modifiedCount} customer rewards`);
 
-        // 5. Delete the firm itself
+        // 5. Delete all gifts for this business
+        const Gift = require('../models/Gift');
+        const deletedGifts = await Gift.deleteMany({ business: req.params.id });
+        console.log(`🗑️ Deleted ${deletedGifts.deletedCount} gifts`);
+
+        // 6. Delete the firm itself
         await Business.findByIdAndDelete(req.params.id);
 
         console.log('✅ Firm deleted:', firm.companyName);
         res.json({
-            message: 'Firma, ilişkili kampanyalar ve müşteri bağlantıları başarıyla silindi',
+            message: 'Firma, ilişkili kampanyalar, hediyeler ve müşteri bağlantıları başarıyla silindi',
             details: {
                 campaigns: deletedCampaigns.deletedCount,
                 customerBusinessRelations: deletedRelations.deletedCount,
                 qrTokens: deletedQRTokens.deletedCount,
+                gifts: deletedGifts.deletedCount,
                 customerRewards: result.modifiedCount
             }
         });
