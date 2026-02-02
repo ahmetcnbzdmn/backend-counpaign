@@ -2,6 +2,7 @@ const Gift = require('../models/Gift');
 const CustomerBusiness = require('../models/CustomerBusiness');
 const Transaction = require('../models/Transaction');
 
+const QRToken = require('../models/QRToken');
 // Create a new gift (Business Only)
 exports.createGift = async (req, res) => {
     try {
@@ -108,7 +109,7 @@ exports.prepareRedemption = async (req, res) => {
         }
 
         // Invalidate previous active tokens for this user & business & type
-        const QRToken = require('../models/QRToken');
+        // Invalidate previous active tokens for this user & business & type
         await QRToken.updateMany(
             {
                 user: customerId,
@@ -123,7 +124,7 @@ exports.prepareRedemption = async (req, res) => {
         const crypto = require('crypto');
         const code = crypto.randomBytes(3).toString('hex').toUpperCase();
 
-        const QRToken = require('../models/QRToken');
+
         await QRToken.create({
             token: code,
             user: customerId,
@@ -149,7 +150,7 @@ exports.verifyRedemptionCode = async (req, res) => {
         const { token } = req.body;
         const businessId = req.user.id;
 
-        const QRToken = require('../models/QRToken');
+
         const qrToken = await QRToken.findOne({
             token: token.toUpperCase(),
             business: businessId,
@@ -184,7 +185,7 @@ exports.completeRedemption = async (req, res) => {
         const { token } = req.body;
         const businessId = req.user.id;
 
-        const QRToken = require('../models/QRToken');
+
         const qrToken = await QRToken.findOne({
             token: token.toUpperCase(),
             business: businessId,
