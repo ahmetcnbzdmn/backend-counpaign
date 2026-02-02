@@ -40,6 +40,19 @@ const transactionSchema = new mongoose.Schema({
     review: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Review'
+    },
+    // New fields for detailed history
+    pointsEarned: {
+        type: Number,
+        default: 0
+    },
+    stampsEarned: {
+        type: Number,
+        default: 0
+    },
+    description: {
+        type: String,
+        default: ''
     }
 });
 
