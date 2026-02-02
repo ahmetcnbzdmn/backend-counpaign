@@ -23,7 +23,7 @@ const qrTokenSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['active', 'scanned', 'used', 'expired'],
+        enum: ['active', 'scanned', 'used', 'expired', 'cancelled'],
         default: 'active'
     },
     metadata: {
