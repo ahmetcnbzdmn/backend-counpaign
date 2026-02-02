@@ -159,12 +159,19 @@ exports.confirmParticipation = async (req, res) => {
 
         // [NEW] Create Transaction Record for Order History
         const Transaction = require('../models/Transaction');
+
+        const isStamp = campaign.rewardType === 'stamp';
+        const rewardVal = campaign.rewardValue || (isStamp ? 1 : 0);
+
         await Transaction.create({
             customer: customerId,
             business: businessId,
-            type: campaign.rewardType === 'stamp' ? 'STAMP' : 'POINT',
+            type: isStamp ? 'STAMP' : 'POINT',
             category: 'KAZANIM',
-            value: campaign.rewardValue || (campaign.rewardType === 'stamp' ? 1 : 0),
+            value: rewardVal,
+            pointsEarned: isStamp ? 0 : rewardVal,
+            stampsEarned: isStamp ? rewardVal : 0,
+            description: `Kampanya: ${campaign.title}`,
             status: 'COMPLETED'
         });
 
