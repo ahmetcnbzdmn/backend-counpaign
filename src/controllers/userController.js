@@ -131,9 +131,11 @@ exports.deleteUser = async (req, res) => {
         const userIdToDelete = req.params.id;
         const requestorId = req.user.id;
 
-        // Dynamic Imports to avoid circular deps if any
+        // Dynamic Imports
         const Participation = require('../models/Participation');
         const Transaction = require('../models/Transaction');
+        const Review = require('../models/Review');
+        const QRToken = require('../models/QRToken');
 
         // Check if requestor is Super Admin
         const admin = await Admin.findById(requestorId);
@@ -155,8 +157,10 @@ exports.deleteUser = async (req, res) => {
             // 4. Delete All Transactions
             await Transaction.deleteMany({ customer: userIdToDelete });
 
-            // 5. Delete QR Tokens (if any)
-            const QRToken = require('../models/QRToken');
+            // 5. Delete All Reviews
+            await Review.deleteMany({ customer: userIdToDelete });
+
+            // 6. Delete QR Tokens
             await QRToken.deleteMany({ user: userIdToDelete });
 
             res.json({ message: 'Kullanıcı ve tüm verileri silindi.' });
@@ -167,22 +171,29 @@ exports.deleteUser = async (req, res) => {
 
             // 1. Delete Wallet Connection for THIS business
             const wallet = await CustomerBusiness.findOneAndDelete({ customer: userIdToDelete, business: requestorId });
-
-            if (!wallet) {
-                // If wallet not found, check if they are even connected. 
-                // Maybe they are just a user the business sees? (Business only sees wallet users anyway)
-                // Return success anyway or specific message
-            }
+            console.log(`- Wallet deleted: ${wallet ? 'Yes' : 'No'}`);
 
             // 2. Delete Participations for THIS business
-            await Participation.deleteMany({ customer: userIdToDelete, business: requestorId });
+            const partCount = await Participation.countDocuments({ customer: userIdToDelete, business: requestorId });
+            console.log(`- Participations found: ${partCount}`);
+            const partResult = await Participation.deleteMany({ customer: userIdToDelete, business: requestorId });
+            console.log(`- Participations deleted: ${partResult.deletedCount}`);
 
-            // 3. Delete Transactions for THIS business (as per user request "onla alakalı olanlar silincek")
-            await Transaction.deleteMany({ customer: userIdToDelete, business: requestorId });
+            // 3. Delete Transactions for THIS business
+            const transCount = await Transaction.countDocuments({ customer: userIdToDelete, business: requestorId });
+            console.log(`- Transactions found: ${transCount}`);
+            const transResult = await Transaction.deleteMany({ customer: userIdToDelete, business: requestorId });
+            console.log(`- Transactions deleted: ${transResult.deletedCount}`);
 
-            // 4. Invalidate Active QR Tokens for this business
-            const QRToken = require('../models/QRToken');
-            await QRToken.deleteMany({ user: userIdToDelete, business: requestorId });
+            // 4. Delete Reviews for THIS business
+            const reviewCount = await Review.countDocuments({ customer: userIdToDelete, business: requestorId });
+            console.log(`- Reviews found: ${reviewCount}`);
+            const reviewResult = await Review.deleteMany({ customer: userIdToDelete, business: requestorId });
+            console.log(`- Reviews deleted: ${reviewResult.deletedCount}`);
+
+            // 5. Invalidate Active QR Tokens for this business
+            const qrResult = await QRToken.deleteMany({ user: userIdToDelete, business: requestorId });
+            console.log(`- QR Tokens deleted: ${qrResult.deletedCount}`);
 
             res.json({ message: 'Kullanıcı işletmenizden silindi.' });
         }
