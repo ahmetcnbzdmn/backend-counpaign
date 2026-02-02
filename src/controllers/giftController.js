@@ -183,7 +183,7 @@ exports.cancelRedemption = async (req, res) => {
             { status: 'cancelled' }
         );
 
-        res.json({ message: 'Transaction cancelled successfully.' });
+        res.json({ message: 'Kod iptal edildi.' });
     } catch (err) {
         console.error("Cancel Redemption Error:", err);
         res.status(500).json({ message: 'Server Error' });
@@ -274,7 +274,7 @@ exports.completeRedemption = async (req, res) => {
             business: businessId,
             type: 'gift_redemption',
             category: 'HARCAMA', // Explicitly set enum value
-            description: type === 'GIFT_ENTITLEMENT' ? 'Free Gift Entitlement Used' : `Gift Redemption: ${title}`,
+            description: type === 'GIFT_ENTITLEMENT' ? 'Hediye Hakkı Kullanımı' : `Hediye Alımı: ${title}`,
             pointsEarned: type === 'GIFT_ENTITLEMENT' ? 0 : -pointCost,
             stampsEarned: 0
         });
