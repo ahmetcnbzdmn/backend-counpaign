@@ -183,7 +183,7 @@ exports.cancelRedemption = async (req, res) => {
             { status: 'cancelled' }
         );
 
-        res.json({ message: 'Kod iptal edildi.' });
+        res.json({ message: 'Transaction cancelled successfully.' });
     } catch (err) {
         console.error("Cancel Redemption Error:", err);
         res.status(500).json({ message: 'Server Error' });
