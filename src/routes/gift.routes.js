@@ -14,6 +14,7 @@ router.delete('/:id', businessAuthMiddleware, giftController.deleteGift);
 router.get('/business/:businessId', authMiddleware, giftController.getBusinessGifts);
 router.post('/redeem', authMiddleware, giftController.redeemGift); // Legacy
 router.post('/prepare-redemption', authMiddleware, giftController.prepareRedemption);
+router.post('/cancel-redemption', authMiddleware, giftController.cancelRedemption);
 router.post('/verify-redemption', businessAuthMiddleware, giftController.verifyRedemptionCode);
 router.post('/complete-redemption', businessAuthMiddleware, giftController.completeRedemption);
 

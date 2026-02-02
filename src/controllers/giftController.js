@@ -144,6 +144,29 @@ exports.prepareRedemption = async (req, res) => {
     }
 };
 
+// 7d. Cancel Redemption (Invalidate Code) - Customer
+exports.cancelRedemption = async (req, res) => {
+    try {
+        const { token } = req.body;
+        const customerId = req.user.id;
+
+        const QRToken = require('../models/QRToken');
+        await QRToken.updateMany(
+            {
+                token: token.toUpperCase(),
+                user: customerId,
+                status: 'active'
+            },
+            { status: 'cancelled' }
+        );
+
+        res.json({ message: 'Kod iptal edildi.' });
+    } catch (err) {
+        console.error("Cancel Redemption Error:", err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 // 7b. Verify Redemption (Check code & return details) - Business
 exports.verifyRedemptionCode = async (req, res) => {
     try {
