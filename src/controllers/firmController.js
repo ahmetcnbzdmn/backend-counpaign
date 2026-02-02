@@ -161,7 +161,12 @@ exports.deleteFirm = async (req, res) => {
         const deletedTransactions = await Transaction.deleteMany({ business: req.params.id });
         console.log(`🗑️ Deleted ${deletedTransactions.deletedCount} transactions`);
 
-        // 7. Delete the firm itself
+        // 7. Delete all reviews for this business
+        const Review = require('../models/Review');
+        const deletedReviews = await Review.deleteMany({ business: req.params.id });
+        console.log(`🗑️ Deleted ${deletedReviews.deletedCount} reviews`);
+
+        // 8. Delete the firm itself
         await Business.findByIdAndDelete(req.params.id);
 
         console.log('✅ Firm deleted:', firm.companyName);
