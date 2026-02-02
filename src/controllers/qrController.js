@@ -267,7 +267,7 @@ exports.checkCustomerStatus = async (req, res) => {
         if (qrToken.status === 'cancelled') {
             return res.json({
                 status: 'cancelled',
-                message: 'İşlem İptal Edildi'
+                message: 'Transaction Cancelled'
             });
         }
 
