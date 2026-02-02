@@ -132,6 +132,11 @@ exports.deleteFirm = async (req, res) => {
         const deletedCampaigns = await Campaign.deleteMany({ businessId: req.params.id });
         console.log(`🗑️ Deleted ${deletedCampaigns.deletedCount} campaigns for firm: ${firm.companyName}`);
 
+        // 1.1 Delete all participations for this business
+        const Participation = require('../models/Participation');
+        const deletedParticipations = await Participation.deleteMany({ business: req.params.id });
+        console.log(`🗑️ Deleted ${deletedParticipations.deletedCount} participations`);
+
         // 2. Delete all CustomerBusiness relationships
         const deletedRelations = await CustomerBusiness.deleteMany({ business: req.params.id });
         console.log(`🗑️ Deleted ${deletedRelations.deletedCount} customer-business relationships`);
@@ -174,6 +179,7 @@ exports.deleteFirm = async (req, res) => {
             message: 'Firma, ilişkili kampanyalar, hediyeler, işlemler ve müşteri bağlantıları başarıyla silindi',
             details: {
                 campaigns: deletedCampaigns.deletedCount,
+                participations: deletedParticipations.deletedCount,
                 customerBusinessRelations: deletedRelations.deletedCount,
                 qrTokens: deletedQRTokens.deletedCount,
                 gifts: deletedGifts.deletedCount,
