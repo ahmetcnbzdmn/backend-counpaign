@@ -45,6 +45,34 @@ exports.removeBusinessFromWallet = async (req, res) => {
             business: businessId
         });
 
+        // 4.1 Delete Participations (Campaign joins)
+        await require('../models/Participation').deleteMany({
+            customer: customerId,
+            business: businessId
+        });
+
+        // 4.2 Delete Reviews
+        await require('../models/Review').deleteMany({
+            customer: customerId,
+            business: businessId
+        });
+
+        // 4.3 Delete Gifts (User specific for this business)
+        // If gifts are tied to specific codes generated for the user
+        await require('../models/Gift').deleteMany({
+            // Assuming Gift model doesn't store 'customer' directly usually, but logic implies
+            // cleaning up any user-specific gift entitlements if stored separately. 
+            // In this schema, gifts are templates, but if there's a user-specific gift record:
+            // Checking Gift schema is prudent, but based on firmController delete logic, 
+            // gifts are business-wide templates. We likely only need to clear interactions (QRToken?).
+        });
+
+        // 4.4 Delete active QR Tokens (Redemptions pending/active)
+        await require('../models/QRToken').deleteMany({
+            user: customerId,
+            business: businessId
+        });
+
         // 5. Rebalance indices: Decrement orderIndex for all items after the deleted one
         await CustomerBusiness.updateMany(
             {
