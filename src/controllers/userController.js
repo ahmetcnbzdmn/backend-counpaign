@@ -195,6 +195,17 @@ exports.deleteUser = async (req, res) => {
             const qrResult = await QRToken.deleteMany({ user: userIdToDelete, business: requestorId });
             console.log(`- QR Tokens deleted: ${qrResult.deletedCount}`);
 
+            // ⚡ Real-Time Update: Emit Event to Mobile App
+            try {
+                const io = require('../utils/socket').getIO();
+                io.to(userIdToDelete).emit('user_disconnected', {
+                    businessId: requestorId
+                });
+                console.log(`📡 Socket Event 'user_disconnected' emitted to ${userIdToDelete}`);
+            } catch (socketError) {
+                console.error('Socket Emit Error:', socketError);
+            }
+
             res.json({ message: 'Kullanıcı işletmenizden silindi.' });
         }
     } catch (error) {
