@@ -124,3 +124,70 @@ exports.deleteWallet = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+// Delete User (Role Based)
+exports.deleteUser = async (req, res) => {
+    try {
+        const userIdToDelete = req.params.id;
+        const requestorId = req.user.id;
+
+        // Dynamic Imports to avoid circular deps if any
+        const Participation = require('../models/Participation');
+        const Transaction = require('../models/Transaction');
+
+        // Check if requestor is Super Admin
+        const admin = await Admin.findById(requestorId);
+
+        if (admin && admin.role === 'super_admin') {
+            console.log(`🗑️ Super Admin deleting user ${userIdToDelete} globally`);
+
+            // GLOBAL DELETE
+            // 1. Delete Customer Profile
+            const deletedUser = await Customer.findByIdAndDelete(userIdToDelete);
+            if (!deletedUser) return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
+
+            // 2. Delete All Wallet Connections
+            await CustomerBusiness.deleteMany({ customer: userIdToDelete });
+
+            // 3. Delete All Participations
+            await Participation.deleteMany({ customer: userIdToDelete });
+
+            // 4. Delete All Transactions
+            await Transaction.deleteMany({ customer: userIdToDelete });
+
+            // 5. Delete QR Tokens (if any)
+            const QRToken = require('../models/QRToken');
+            await QRToken.deleteMany({ user: userIdToDelete });
+
+            res.json({ message: 'Kullanıcı ve tüm verileri silindi.' });
+
+        } else {
+            // BUSINESS DELETE (Disconnect)
+            console.log(`🔌 Business ${requestorId} disconnecting user ${userIdToDelete}`);
+
+            // 1. Delete Wallet Connection for THIS business
+            const wallet = await CustomerBusiness.findOneAndDelete({ customer: userIdToDelete, business: requestorId });
+
+            if (!wallet) {
+                // If wallet not found, check if they are even connected. 
+                // Maybe they are just a user the business sees? (Business only sees wallet users anyway)
+                // Return success anyway or specific message
+            }
+
+            // 2. Delete Participations for THIS business
+            await Participation.deleteMany({ customer: userIdToDelete, business: requestorId });
+
+            // 3. Delete Transactions for THIS business (as per user request "onla alakalı olanlar silincek")
+            await Transaction.deleteMany({ customer: userIdToDelete, business: requestorId });
+
+            // 4. Invalidate Active QR Tokens for this business
+            const QRToken = require('../models/QRToken');
+            await QRToken.deleteMany({ user: userIdToDelete, business: requestorId });
+
+            res.json({ message: 'Kullanıcı işletmenizden silindi.' });
+        }
+    } catch (error) {
+        console.error('Delete user error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};

@@ -18,4 +18,7 @@ router.patch('/:id/wallet/:recordId', auth, userController.updateWallet);
 // Delete wallet record
 router.delete('/:id/wallet/:recordId', auth, userController.deleteWallet);
 
+// Delete user (or disconnect from business)
+router.delete('/:id', auth, userController.deleteUser);
+
 module.exports = router;
