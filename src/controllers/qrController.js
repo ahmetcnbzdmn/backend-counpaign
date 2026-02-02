@@ -263,9 +263,40 @@ exports.checkCustomerStatus = async (req, res) => {
             });
         }
 
+        // [NEW] Handle Cancelled Status
+        if (qrToken.status === 'cancelled') {
+            return res.json({
+                status: 'cancelled',
+                message: 'İşlem İptal Edildi'
+            });
+        }
+
         res.json({ status: qrToken.status });
     } catch (error) {
         console.error('Check Customer QR status error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// [NEW] Cancel QR (Called when admin closes the modal)
+exports.cancelQR = async (req, res) => {
+    try {
+        const { qrTokenId } = req.body;
+        const businessId = req.user?.id;
+
+        const qrToken = await QRToken.findOne({ _id: qrTokenId, business: businessId });
+
+        if (!qrToken) {
+            return res.status(404).json({ error: 'Token not found or unauthorized' });
+        }
+
+        qrToken.status = 'cancelled';
+        await qrToken.save();
+
+        console.log(`🚫 QR Token cancelled by business: ${businessId}`);
+        res.json({ message: 'QR Cancelled' });
+    } catch (error) {
+        console.error('Cancel QR error:', error);
         res.status(500).json({ error: error.message });
     }
 };

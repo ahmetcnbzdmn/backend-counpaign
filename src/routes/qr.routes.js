@@ -12,6 +12,9 @@ router.post('/validate', auth, qrController.validateQR);
 // Confirm participation and update stamps/gifts
 router.post('/confirm', auth, qrController.confirmParticipation);
 
+// Cancel participation (Admin closes modal)
+router.post('/cancel', auth, qrController.cancelQR);
+
 // Check QR status (polling for admin panel)
 router.get('/status/:token', auth, qrController.checkStatus);
 
