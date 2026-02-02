@@ -39,6 +39,29 @@ exports.getMyGifts = async (req, res) => {
     }
 };
 
+// Update a gift (Business Only)
+exports.updateGift = async (req, res) => {
+    try {
+        const { title, pointCost } = req.body;
+        const businessId = req.user.id;
+        const giftId = req.params.id;
+
+        const gift = await Gift.findOne({ _id: giftId, business: businessId });
+        if (!gift) {
+            return res.status(404).json({ message: 'Hediye bulunamadı.' });
+        }
+
+        if (title) gift.title = title;
+        if (pointCost !== undefined) gift.pointCost = pointCost;
+
+        await gift.save();
+        res.json(gift);
+    } catch (err) {
+        console.error("Update Gift Error:", err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 // Delete a gift (Business Only)
 exports.deleteGift = async (req, res) => {
     try {

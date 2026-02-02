@@ -7,6 +7,7 @@ const businessAuthMiddleware = require('../middleware/businessAuthMiddleware');
 // Business Routes (Manage Gifts)
 router.post('/', businessAuthMiddleware, giftController.createGift);
 router.get('/my', businessAuthMiddleware, giftController.getMyGifts);
+router.put('/:id', businessAuthMiddleware, giftController.updateGift);
 router.delete('/:id', businessAuthMiddleware, giftController.deleteGift);
 
 // Customer Routes (View & Redeem)
