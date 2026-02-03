@@ -65,7 +65,7 @@ exports.getAllReviews = async (req, res) => {
     try {
         const reviews = await Review.find()
             .populate('business', 'companyName logo')
-            .populate('customer', 'username email profileImage')
+            .populate('customer', 'name surname email profileImage')
             .sort({ createdAt: -1 });
 
         const reviewsWithFlag = reviews.map(r => ({
@@ -99,7 +99,7 @@ exports.getFirmReviews = async (req, res) => {
             rating: r.rating,
             comment: r.comment,
             // Mask User
-            customer: { username: 'Anonim Kullanıcı' },
+            customer: { name: 'Anonim', surname: '' },
             // Mask Date (Optional: show "Recent" or just hide exact time)
             createdAt: r.createdAt,
             isAnonymous: true
