@@ -60,3 +60,49 @@ exports.getReviews = async (req, res) => {
         res.status(500).json({ message: 'Değerlendirmeler alınamadı.' });
     }
 };
+// Get all reviews (Super Admin) - Full details
+exports.getAllReviews = async (req, res) => {
+    try {
+        const reviews = await Review.find()
+            .populate('business', 'companyName logo')
+            .populate('customer', 'username email profileImage')
+            .sort({ createdAt: -1 });
+
+        res.json(reviews);
+    } catch (err) {
+        console.error("Get All Reviews Error:", err);
+        res.status(500).json({ message: 'Değerlendirmeler alınamadı.' });
+    }
+};
+
+// Get firm reviews (Firm Admin) - Anonymous
+exports.getFirmReviews = async (req, res) => {
+    try {
+        const businessId = req.user.businessId;
+        if (!businessId) {
+            return res.status(400).json({ message: 'İşletme kimliği bulunamadı.' });
+        }
+
+        const reviews = await Review.find({ business: businessId })
+            .populate('customer', 'username') // Fetch username to mask it? Or just don't populate?
+            .select('-transaction') // Hide transaction link
+            .sort({ createdAt: -1 });
+
+        // Transform for anonymity
+        const anonymousReviews = reviews.map(r => ({
+            _id: r._id,
+            rating: r.rating,
+            comment: r.comment,
+            // Mask User
+            customer: { username: 'Anonim Kullanıcı' },
+            // Mask Date (Optional: show "Recent" or just hide exact time)
+            createdAt: r.createdAt,
+            isAnonymous: true
+        }));
+
+        res.json(anonymousReviews);
+    } catch (err) {
+        console.error("Get Firm Reviews Error:", err);
+        res.status(500).json({ message: 'Değerlendirmeler alınamadı.' });
+    }
+};

@@ -58,6 +58,7 @@ app.use('/api/campaigns', require('./routes/campaign.routes'));
 app.use('/api/participations', require('./routes/participation.routes'));
 app.use('/api/upload', require('./routes/upload.routes'));
 app.use('/api/gifts', require('./routes/gift.routes')); // Gift system
+app.use('/api/reviews', require('./routes/review.routes')); // Review system
 
 // 404 Handler for debugging
 // 404 Handler for debugging
