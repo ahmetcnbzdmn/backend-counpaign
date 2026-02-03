@@ -39,20 +39,18 @@ exports.removeBusinessFromWallet = async (req, res) => {
         // 3. Delete the item
         await CustomerBusiness.deleteOne({ _id: itemToDelete._id });
 
-        // 4. Delete associated transactions (Clean up history)
+        // 4. Delete associated transactions (Cleanup history)
         await require('../models/Transaction').deleteMany({
             customer: customerId,
             business: businessId
         });
 
-        // 4.1 Delete Participations (Campaign joins)
-        // [Counpaign Fix] PRESERVE Participations (Gifts) so user doesn't lose rewards.
-        /* 
+        // 4.1 Delete Participations (Reset campaign progress)
+        // User requesting to delete this so they can "re-join" when adding firm back.
         await require('../models/Participation').deleteMany({
             customer: customerId,
             business: businessId
         });
-        */
 
         // 4.2 Delete Reviews
         await require('../models/Review').deleteMany({
@@ -60,14 +58,15 @@ exports.removeBusinessFromWallet = async (req, res) => {
             business: businessId
         });
 
-        // 4.3 Delete Gifts (User specific for this business)
-        await require('../models/Gift').deleteMany({});
-
-        // 4.4 Delete active QR Tokens (Redemptions pending/active)
+        // 4.3 Delete active QR Tokens (Redemptions pending/active)
         await require('../models/QRToken').deleteMany({
             user: customerId,
             business: businessId
         });
+
+        // [CRITICAL] Do NOT delete 'Gift' model here. 
+        // Gifts are admin-defined templates, not user data.
+        // Previously allow 'Gift.deleteMany({})' which was dangerous.
 
         // 5. Rebalance indices: Decrement orderIndex for all items after the deleted one
         await CustomerBusiness.updateMany(
