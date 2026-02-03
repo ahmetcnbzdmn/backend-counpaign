@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const { verifyFirebaseToken } = require('../utils/firebaseVerifier');
 const Customer = require('../models/Customer');
 
-const authMiddleware = async (req, res, next) => {
+const verifyToken = async (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
@@ -11,7 +11,7 @@ const authMiddleware = async (req, res, next) => {
 
     try {
         // 1. Try verifying as Local Backend Token (HS256)
-        const verified = jwt.verify(token, process.env.JWT_SECRET);
+        const verified = jwt.verify(token, process.env.JWT_SECRET || 'secret');
         req.user = verified;
         // console.log('   ✅ Auth verified (Local JWT), user:', req.user.id);
         next();
@@ -62,4 +62,23 @@ const authMiddleware = async (req, res, next) => {
     }
 };
 
-module.exports = authMiddleware;
+const isSuperAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'super_admin') {
+        next();
+    } else {
+        res.status(403).json({ message: 'Access denied. Super Admin only.' });
+    }
+};
+
+const isBusiness = (req, res, next) => {
+    if (req.user && (req.user.role === 'business' || req.user.role === 'super_admin')) {
+        next();
+    } else {
+        res.status(403).json({ message: 'Access denied. Business only.' });
+    }
+};
+
+module.exports = verifyToken; // Default export for backwards compatibility
+module.exports.verifyToken = verifyToken; // Named export
+module.exports.isSuperAdmin = isSuperAdmin;
+module.exports.isBusiness = isBusiness;
