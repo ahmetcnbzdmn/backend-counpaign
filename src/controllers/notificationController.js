@@ -150,8 +150,18 @@ exports.sendToBusiness = async (req, res) => {
 exports.getMyNotifications = async (req, res) => {
     try {
         // Assuming req.user is set by authMiddleware
-        // For business users, req.user.id is the business ID (usually) or linked via businessId
-        const businessId = req.user.role === 'business' ? req.user.id : req.user.businessId;
+        // For business users, req.user.id is the business ID
+        let businessId = req.user.id;
+
+        // If super admin looking at business context (rare, but possible)
+        if (req.user.role === 'super_admin' && req.query.businessId) {
+            businessId = req.query.businessId;
+        } else if (req.user.businessId) {
+            // Some auth flows might attach businessId separately
+            businessId = req.user.businessId;
+        }
+
+        console.log(`[getMyNotifications] User: ${req.user.username || 'N/A'}, Role: ${req.user.role}, Target BusinessId: ${businessId}`);
 
         if (!businessId) {
             return res.status(400).json({ message: 'İşletme kimliği bulunamadı.' });
