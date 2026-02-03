@@ -18,4 +18,7 @@ router.get('/user', verifyToken, notificationController.getUserNotifications);
 // Mark as Read
 router.put('/:id/read', verifyToken, notificationController.markAsRead);
 
+// Delete Notification
+router.delete('/:id', verifyToken, notificationController.deleteNotification);
+
 module.exports = router;
