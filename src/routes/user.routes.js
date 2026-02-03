@@ -7,8 +7,9 @@ const auth = require('../middleware/authMiddleware');
 router.get('/', auth, userController.getUsers);
 
 // Get single user by ID
-router.get('/:id', verifyToken, userController.getUserById);
-router.post('/update-fcm-token', verifyToken, userController.updateFcmToken);
+// Get single user by ID
+router.get('/:id', auth, userController.getUserById);
+router.post('/update-fcm-token', auth, userController.updateFcmToken);
 
 // Get user's wallet cafes
 router.get('/:id/cafes', auth, userController.getUserCafes);
