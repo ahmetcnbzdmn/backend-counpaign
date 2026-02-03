@@ -40,19 +40,19 @@ exports.removeBusinessFromWallet = async (req, res) => {
         await CustomerBusiness.deleteOne({ _id: itemToDelete._id });
 
         // 4. Delete associated transactions (Clean up history)
-        // [Counpaign Fix] We now PRESERVE history and gifts even if wallet is removed.
-        // Users expect their earned rights (participations) to remain.
-        /*
         await require('../models/Transaction').deleteMany({
             customer: customerId,
             business: businessId
         });
 
         // 4.1 Delete Participations (Campaign joins)
+        // [Counpaign Fix] PRESERVE Participations (Gifts) so user doesn't lose rewards.
+        /* 
         await require('../models/Participation').deleteMany({
             customer: customerId,
             business: businessId
         });
+        */
 
         // 4.2 Delete Reviews
         await require('../models/Review').deleteMany({
@@ -68,7 +68,6 @@ exports.removeBusinessFromWallet = async (req, res) => {
             user: customerId,
             business: businessId
         });
-        */
 
         // 5. Rebalance indices: Decrement orderIndex for all items after the deleted one
         await CustomerBusiness.updateMany(
