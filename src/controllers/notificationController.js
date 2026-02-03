@@ -168,6 +168,22 @@ exports.getMyNotifications = async (req, res) => {
     }
 };
 
+// Get User Notifications (For Customer App)
+exports.getUserNotifications = async (req, res) => {
+    try {
+        const userId = req.user.id; // From verifyToken
+
+        const notifications = await Notification.find({ targetCustomer: userId })
+            .sort({ createdAt: -1 })
+            .limit(50);
+
+        res.json(notifications);
+    } catch (err) {
+        console.error("Get User Notifications Error:", err);
+        res.status(500).json({ message: 'Bildirimler alınamadı.' });
+    }
+};
+
 // Mark as Read
 exports.markAsRead = async (req, res) => {
     try {

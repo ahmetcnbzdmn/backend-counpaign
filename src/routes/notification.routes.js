@@ -12,6 +12,9 @@ router.post('/send-business', verifyToken, isSuperAdmin, notificationController.
 // Get My Notifications (Firm Admin)
 router.get('/my-notifications', verifyToken, isBusiness, notificationController.getMyNotifications);
 
+// Get User Notifications (Customer App)
+router.get('/user', verifyToken, notificationController.getUserNotifications);
+
 // Mark as Read
 router.put('/:id/read', verifyToken, notificationController.markAsRead);
 
