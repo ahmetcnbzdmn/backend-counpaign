@@ -65,7 +65,8 @@ exports.createFirm = async (req, res) => {
             neighborhood: settings.neighborhood || '',
             settings: {
                 pointsPerVisit: 10,
-                redemptionThreshold: 100
+                redemptionThreshold: 100,
+                stampsTarget: settings.stampsTarget || 6
             }
         });
 

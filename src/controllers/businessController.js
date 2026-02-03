@@ -138,11 +138,16 @@ exports.addBusinessToWallet = async (req, res) => {
         const lastItem = await CustomerBusiness.findOne({ customer: customerId }).sort({ orderIndex: -1 });
         const newOrderIndex = (lastItem && lastItem.orderIndex !== undefined) ? lastItem.orderIndex + 1 : 0;
 
+        // Fetch business settings to get stampsTarget
+        const business = await Business.findById(businessId);
+        const stampsTarget = (business && business.settings && business.settings.stampsTarget) ? business.settings.stampsTarget : 6;
+
         // Create new relationship
         const newRel = new CustomerBusiness({
             customer: customerId,
             business: businessId,
-            points: 0, // Start with 0 points
+            points: 0,
+            stampsTarget: stampsTarget, // Use firm-specific target
             orderIndex: newOrderIndex
         });
 

@@ -21,7 +21,8 @@ const businessSchema = new mongoose.Schema({
     },
     settings: {
         pointsPerVisit: { type: Number, default: 10 },
-        redemptionThreshold: { type: Number, default: 100 }
+        redemptionThreshold: { type: Number, default: 100 },
+        stampsTarget: { type: Number, default: 6 }
     },
     // Visual Identity Fields for Mobile App
     category: {
