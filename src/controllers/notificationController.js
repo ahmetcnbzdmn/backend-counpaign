@@ -215,3 +215,33 @@ exports.deleteNotification = async (req, res) => {
         res.status(500).json({ message: 'Silme işlemi başarısız.' });
     }
 };
+
+// Get All Business Notifications (Super Admin)
+exports.getAllBusinessNotifications = async (req, res) => {
+    try {
+        const notifications = await Notification.find({ type: 'BUSINESS' })
+            .populate('targetBusiness', 'companyName email')
+            .sort({ createdAt: -1 })
+            .limit(200);
+
+        res.json(notifications);
+    } catch (err) {
+        console.error("Get All Business Notifications Error:", err);
+        res.status(500).json({ message: 'Bildirimler alınamadı.' });
+    }
+};
+
+// Get All User Notifications (Super Admin)
+exports.getAllUserNotifications = async (req, res) => {
+    try {
+        const notifications = await Notification.find({ type: 'USER' })
+            .populate('targetCustomer', 'name surname phoneNumber email')
+            .sort({ createdAt: -1 })
+            .limit(200);
+
+        res.json(notifications);
+    } catch (err) {
+        console.error("Get All User Notifications Error:", err);
+        res.status(500).json({ message: 'Bildirimler alınamadı.' });
+    }
+};

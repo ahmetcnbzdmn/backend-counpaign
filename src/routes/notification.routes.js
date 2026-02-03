@@ -21,4 +21,10 @@ router.put('/:id/read', verifyToken, notificationController.markAsRead);
 // Delete Notification
 router.delete('/:id', verifyToken, notificationController.deleteNotification);
 
+// Super Admin: Get All Business Notifications
+router.get('/all-business', verifyToken, isSuperAdmin, notificationController.getAllBusinessNotifications);
+
+// Super Admin: Get All User Notifications
+router.get('/all-users', verifyToken, isSuperAdmin, notificationController.getAllUserNotifications);
+
 module.exports = router;
