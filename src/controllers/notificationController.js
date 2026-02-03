@@ -1,4 +1,7 @@
 const { getMessaging } = require('../utils/firebaseAdmin');
+const Customer = require('../models/Customer');
+const Business = require('../models/Business');
+const Notification = require('../models/Notification');
 
 // Helper to chunk tokens (FCM multicast limit is 500)
 const chunkArray = (myArray, chunk_size) => {
