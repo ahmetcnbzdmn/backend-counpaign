@@ -126,6 +126,22 @@ exports.deleteWallet = async (req, res) => {
 };
 
 // Delete User (Role Based)
+// Update FCM Token
+exports.updateFcmToken = async (req, res) => {
+    try {
+        const { fcmToken } = req.body;
+        if (!fcmToken) {
+            return res.status(400).json({ message: 'Token gerekli.' });
+        }
+
+        await Customer.findByIdAndUpdate(req.user.id, { fcmToken });
+        res.json({ success: true, message: 'Token güncellendi.' });
+    } catch (err) {
+        console.error("FCM Token Update Error:", err);
+        res.status(500).json({ message: 'Token güncellenemedi.' });
+    }
+};
+
 exports.deleteUser = async (req, res) => {
     try {
         const userIdToDelete = req.params.id;

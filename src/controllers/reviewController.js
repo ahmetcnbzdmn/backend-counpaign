@@ -83,7 +83,10 @@ exports.getAllReviews = async (req, res) => {
 // Get firm reviews (Firm Admin) - Anonymous
 exports.getFirmReviews = async (req, res) => {
     try {
-        const businessId = req.user.businessId;
+        // For 'business' role, the user ID in the token IS the business ID.
+        // For other roles (if we support managers later), it might be separate.
+        const businessId = req.user.role === 'business' ? req.user.id : req.user.businessId;
+
         if (!businessId) {
             return res.status(400).json({ message: 'İşletme kimliği bulunamadı.' });
         }
@@ -109,5 +112,28 @@ exports.getFirmReviews = async (req, res) => {
     } catch (err) {
         console.error("Get Firm Reviews Error:", err);
         res.status(500).json({ message: 'Değerlendirmeler alınamadı.' });
+    }
+};
+// Delete Review (Super Admin Only)
+exports.deleteReview = async (req, res) => {
+    try {
+        const reviewId = req.params.id;
+        const review = await Review.findById(reviewId);
+
+        if (!review) {
+            return res.status(404).json({ message: 'Değerlendirme bulunamadı.' });
+        }
+
+        // Unlink from transaction
+        if (review.transaction) {
+            await Transaction.findByIdAndUpdate(review.transaction, { $unset: { review: 1 } });
+        }
+
+        await Review.findByIdAndDelete(reviewId);
+
+        res.json({ message: 'Değerlendirme başarıyla silindi.' });
+    } catch (err) {
+        console.error("Delete Review Error:", err);
+        res.status(500).json({ message: 'Değerlendirme silinemedi.' });
     }
 };

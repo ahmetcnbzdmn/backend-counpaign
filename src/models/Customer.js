@@ -35,6 +35,10 @@ const customerSchema = new mongoose.Schema({
         type: String, // Base64 or URL
         default: null
     },
+    fcmToken: {
+        type: String,
+        default: ''
+    },
     gender: {
         type: String,
         enum: ['male', 'female', 'other', ''],

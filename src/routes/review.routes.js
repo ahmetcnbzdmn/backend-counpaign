@@ -12,6 +12,9 @@ router.get('/my-reviews', verifyToken, reviewController.getReviews);
 // Get ALL reviews (Super Admin)
 router.get('/all', verifyToken, isSuperAdmin, reviewController.getAllReviews);
 
+// Delete Review (Super Admin)
+router.delete('/:id', verifyToken, isSuperAdmin, reviewController.deleteReview);
+
 // Get My Firm's reviews (Firm Admin)
 router.get('/my-business', verifyToken, isBusiness, reviewController.getFirmReviews);
 
