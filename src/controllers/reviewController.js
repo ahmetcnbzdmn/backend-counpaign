@@ -68,7 +68,12 @@ exports.getAllReviews = async (req, res) => {
             .populate('customer', 'username email profileImage')
             .sort({ createdAt: -1 });
 
-        res.json(reviews);
+        const reviewsWithFlag = reviews.map(r => ({
+            ...r.toObject(),
+            isAnonymous: false
+        }));
+
+        res.json(reviewsWithFlag);
     } catch (err) {
         console.error("Get All Reviews Error:", err);
         res.status(500).json({ message: 'Değerlendirmeler alınamadı.' });
