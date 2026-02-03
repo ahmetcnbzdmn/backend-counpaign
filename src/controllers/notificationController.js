@@ -200,6 +200,18 @@ exports.markAsRead = async (req, res) => {
         await Notification.findByIdAndUpdate(req.params.id, { isRead: true });
         res.json({ success: true });
     } catch (err) {
+        console.error("Mark Read Error:", err);
         res.status(500).json({ message: 'İşlem başarısız.' });
+    }
+};
+
+// Delete Notification
+exports.deleteNotification = async (req, res) => {
+    try {
+        await Notification.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Bildirim silindi.' });
+    } catch (err) {
+        console.error("Delete Notification Error:", err);
+        res.status(500).json({ message: 'Silme işlemi başarısız.' });
     }
 };
