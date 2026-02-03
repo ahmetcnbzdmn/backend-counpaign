@@ -172,12 +172,17 @@ exports.deleteFirm = async (req, res) => {
         const deletedReviews = await Review.deleteMany({ business: req.params.id });
         console.log(`🗑️ Deleted ${deletedReviews.deletedCount} reviews`);
 
-        // 8. Delete the firm itself
+        // 8. Delete all notifications for this business
+        const Notification = require('../models/Notification');
+        const deletedNotifications = await Notification.deleteMany({ targetBusiness: req.params.id });
+        console.log(`🗑️ Deleted ${deletedNotifications.deletedCount} notifications`);
+
+        // 9. Delete the firm itself
         await Business.findByIdAndDelete(req.params.id);
 
         console.log('✅ Firm deleted:', firm.companyName);
         res.json({
-            message: 'Firma, ilişkili kampanyalar, hediyeler, işlemler ve müşteri bağlantıları başarıyla silindi',
+            message: 'Firma, ilişkili kampanyalar, hediyeler, işlemler, bildirimler ve müşteri bağlantıları başarıyla silindi',
             details: {
                 campaigns: deletedCampaigns.deletedCount,
                 participations: deletedParticipations.deletedCount,
@@ -185,6 +190,8 @@ exports.deleteFirm = async (req, res) => {
                 qrTokens: deletedQRTokens.deletedCount,
                 gifts: deletedGifts.deletedCount,
                 transactions: deletedTransactions.deletedCount,
+                reviews: deletedReviews.deletedCount,
+                notifications: deletedNotifications.deletedCount,
                 customerRewards: result.modifiedCount
             }
         });
