@@ -18,7 +18,10 @@ router.get('/user', verifyToken, notificationController.getUserNotifications);
 // Mark as Read
 router.put('/:id/read', verifyToken, notificationController.markAsRead);
 
-// Delete Notification
+// Soft Delete Notification (Mobile App - marks as deleted but keeps in DB)
+router.put('/:id/soft-delete', verifyToken, notificationController.softDeleteNotification);
+
+// Hard Delete Notification (Admin Panel - permanently removes)
 router.delete('/:id', verifyToken, notificationController.deleteNotification);
 
 // Super Admin: Get All Business Notifications

@@ -183,7 +183,11 @@ exports.getUserNotifications = async (req, res) => {
     try {
         const userId = req.user.id; // From verifyToken
 
-        const notifications = await Notification.find({ targetCustomer: userId })
+        // Filter out deleted notifications
+        const notifications = await Notification.find({
+            targetCustomer: userId,
+            isDeleted: { $ne: true }
+        })
             .sort({ createdAt: -1 })
             .limit(50);
 
@@ -205,11 +209,22 @@ exports.markAsRead = async (req, res) => {
     }
 };
 
-// Delete Notification
+// Soft Delete Notification (For Mobile App - User)
+exports.softDeleteNotification = async (req, res) => {
+    try {
+        await Notification.findByIdAndUpdate(req.params.id, { isDeleted: true });
+        res.json({ success: true, message: 'Bildirim silindi.' });
+    } catch (err) {
+        console.error("Soft Delete Notification Error:", err);
+        res.status(500).json({ message: 'Silme işlemi başarısız.' });
+    }
+};
+
+// Hard Delete Notification (For Admin Panel)
 exports.deleteNotification = async (req, res) => {
     try {
         await Notification.findByIdAndDelete(req.params.id);
-        res.json({ message: 'Bildirim silindi.' });
+        res.json({ message: 'Bildirim kalıcı olarak silindi.' });
     } catch (err) {
         console.error("Delete Notification Error:", err);
         res.status(500).json({ message: 'Silme işlemi başarısız.' });
