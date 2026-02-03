@@ -174,8 +174,15 @@ exports.deleteFirm = async (req, res) => {
 
         // 8. Delete all notifications for this business
         const Notification = require('../models/Notification');
-        const deletedNotifications = await Notification.deleteMany({ targetBusiness: req.params.id });
-        console.log(`🗑️ Deleted ${deletedNotifications.deletedCount} notifications`);
+        // Delete business notifications
+        const deletedBusinessNotifications = await Notification.deleteMany({ targetBusiness: req.params.id });
+        console.log(`🗑️ Deleted ${deletedBusinessNotifications.deletedCount} business notifications`);
+
+        // Delete user notifications where title is the firm's name
+        const deletedUserNotifications = await Notification.deleteMany({ type: 'USER', title: firm.companyName });
+        console.log(`🗑️ Deleted ${deletedUserNotifications.deletedCount} user notifications with firm title`);
+
+        const deletedNotifications = deletedBusinessNotifications.deletedCount + deletedUserNotifications.deletedCount;
 
         // 9. Delete the firm itself
         await Business.findByIdAndDelete(req.params.id);
