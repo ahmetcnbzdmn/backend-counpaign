@@ -337,34 +337,117 @@ exports.getFirmStats = async (req, res) => {
         const CustomerBusiness = require('../models/CustomerBusiness');
         const Participation = require('../models/Participation');
         const Transaction = require('../models/Transaction');
+        const Review = require('../models/Review');
+        const Gift = require('../models/Gift');
+
+        // Date helpers
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
         // 1. Customer Count (Wallet Adds)
         const totalCustomers = await CustomerBusiness.countDocuments({ business: businessId });
 
         // 2. Participations
-        const totalParticipations = await Participation.countDocuments({ businessId });
+        const totalParticipations = await Participation.countDocuments({ business: businessId });
 
-        // 3. Transactions (Mocked daily/monthly for now)
-        const totalTransactions = await Transaction.countDocuments({ business: businessId });
+        // 3. Transactions
+        const dailyTransactions = await Transaction.countDocuments({
+            business: businessId,
+            createdAt: { $gte: todayStart }
+        });
+        const monthlyTransactions = await Transaction.countDocuments({
+            business: businessId,
+            createdAt: { $gte: monthStart }
+        });
 
-        // 4. Mock Charts Data (Empty arrays to prevent frontend crash)
-        const walletAdsChart = [];
+        // 4. Weekly Rewards
+        const weeklyStampTx = await Transaction.countDocuments({
+            business: businessId,
+            type: 'STAMP',
+            createdAt: { $gte: weekAgo }
+        });
+        const weeklyPointsAgg = await Transaction.aggregate([
+            { $match: { business: require('mongoose').Types.ObjectId(businessId), type: 'STAMP', createdAt: { $gte: weekAgo } } },
+            { $group: { _id: null, total: { $sum: '$pointsEarned' } } }
+        ]);
+        const weeklyPoints = weeklyPointsAgg[0]?.total || 0;
+
+        const weeklyGifts = await Gift.countDocuments({
+            business: businessId,
+            isRedeemed: true,
+            createdAt: { $gte: weekAgo }
+        });
+
+        // 5. Charts Data (Last 30 days)
+        const dayNames = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+
+        // Wallet Adds Chart
+        const walletAddsChart = [];
+        for (let i = 29; i >= 0; i--) {
+            const dayStart = new Date(todayStart.getTime() - i * 24 * 60 * 60 * 1000);
+            const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+            const count = await CustomerBusiness.countDocuments({
+                business: businessId,
+                createdAt: { $gte: dayStart, $lt: dayEnd }
+            });
+            walletAddsChart.push({
+                day: `${dayStart.getDate()}/${dayStart.getMonth() + 1}`,
+                count
+            });
+        }
+
+        // Transactions Chart
         const transactionsChart = [];
+        for (let i = 29; i >= 0; i--) {
+            const dayStart = new Date(todayStart.getTime() - i * 24 * 60 * 60 * 1000);
+            const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+            const count = await Transaction.countDocuments({
+                business: businessId,
+                createdAt: { $gte: dayStart, $lt: dayEnd }
+            });
+            transactionsChart.push({
+                day: `${dayStart.getDate()}/${dayStart.getMonth() + 1}`,
+                count
+            });
+        }
+
+        // 6. Reviews
+        const totalReviews = await Review.countDocuments({ business: businessId });
+        const avgRatingResult = await Review.aggregate([
+            { $match: { business: require('mongoose').Types.ObjectId(businessId) } },
+            { $group: { _id: null, avg: { $avg: '$rating' } } }
+        ]);
+        const avgRating = avgRatingResult[0]?.avg ? avgRatingResult[0].avg.toFixed(1) : 0;
+
+        // 7. Gifts
+        const totalGifts = await Gift.countDocuments({ business: businessId });
+        const redeemedGifts = await Gift.countDocuments({ business: businessId, isRedeemed: true });
 
         res.json({
             customers: { total: totalCustomers },
             participations: { total: totalParticipations },
             transactions: {
-                daily: 0,
-                monthly: totalTransactions
+                daily: dailyTransactions,
+                monthly: monthlyTransactions
             },
             rewards: {
-                weeklyPoints: 0,
-                weeklyStamps: 0,
-                weeklyCoffee: 0
+                weeklyPoints: weeklyPoints,
+                weeklyStamps: weeklyStampTx,
+                weeklyCoffee: weeklyGifts
+            },
+            reviews: {
+                total: totalReviews,
+                avgRating: parseFloat(avgRating)
+            },
+            gifts: {
+                total: totalGifts,
+                redeemed: redeemedGifts
             },
             charts: {
-                walletAdds: walletAdsChart,
+                walletAdds: walletAddsChart,
                 transactions: transactionsChart
             }
         });
