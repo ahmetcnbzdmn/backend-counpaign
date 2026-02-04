@@ -339,6 +339,7 @@ exports.getFirmStats = async (req, res) => {
         const Transaction = require('../models/Transaction');
         const Review = require('../models/Review');
         const Gift = require('../models/Gift');
+        const mongoose = require('mongoose');
 
         // Date helpers
         const now = new Date();
@@ -370,7 +371,7 @@ exports.getFirmStats = async (req, res) => {
             createdAt: { $gte: weekAgo }
         });
         const weeklyPointsAgg = await Transaction.aggregate([
-            { $match: { business: require('mongoose').Types.ObjectId(businessId), type: 'STAMP', createdAt: { $gte: weekAgo } } },
+            { $match: { business: new mongoose.Types.ObjectId(businessId), type: 'STAMP', createdAt: { $gte: weekAgo } } },
             { $group: { _id: null, total: { $sum: '$pointsEarned' } } }
         ]);
         const weeklyPoints = weeklyPointsAgg[0]?.total || 0;
@@ -417,7 +418,7 @@ exports.getFirmStats = async (req, res) => {
         // 6. Reviews
         const totalReviews = await Review.countDocuments({ business: businessId });
         const avgRatingResult = await Review.aggregate([
-            { $match: { business: require('mongoose').Types.ObjectId(businessId) } },
+            { $match: { business: new mongoose.Types.ObjectId(businessId) } },
             { $group: { _id: null, avg: { $avg: '$rating' } } }
         ]);
         const avgRating = avgRatingResult[0]?.avg ? avgRatingResult[0].avg.toFixed(1) : 0;
