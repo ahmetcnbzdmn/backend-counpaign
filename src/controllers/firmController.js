@@ -365,20 +365,23 @@ exports.getFirmStats = async (req, res) => {
         });
 
         // 4. Weekly Rewards
+        // Count KAZANIM transactions (pul/stamp earnings)
         const weeklyStampTx = await Transaction.countDocuments({
             business: businessId,
-            type: 'STAMP',
+            category: 'KAZANIM',
             createdAt: { $gte: weekAgo }
         });
+        // Sum points earned from KAZANIM transactions
         const weeklyPointsAgg = await Transaction.aggregate([
-            { $match: { business: new mongoose.Types.ObjectId(businessId), type: 'STAMP', createdAt: { $gte: weekAgo } } },
+            { $match: { business: new mongoose.Types.ObjectId(businessId), category: 'KAZANIM', createdAt: { $gte: weekAgo } } },
             { $group: { _id: null, total: { $sum: '$pointsEarned' } } }
         ]);
         const weeklyPoints = weeklyPointsAgg[0]?.total || 0;
 
-        const weeklyGifts = await Gift.countDocuments({
+        // Count gift redemptions from Transaction (GIFT_REDEEM or gift_redemption types)
+        const weeklyGifts = await Transaction.countDocuments({
             business: businessId,
-            isRedeemed: true,
+            type: { $in: ['GIFT_REDEEM', 'gift_redemption'] },
             createdAt: { $gte: weekAgo }
         });
 
@@ -423,9 +426,12 @@ exports.getFirmStats = async (req, res) => {
         ]);
         const avgRating = avgRatingResult[0]?.avg ? avgRatingResult[0].avg.toFixed(1) : 0;
 
-        // 7. Gifts
+        // 7. Gifts - count from Transaction table (gift redemptions)
         const totalGifts = await Gift.countDocuments({ business: businessId });
-        const redeemedGifts = await Gift.countDocuments({ business: businessId, isRedeemed: true });
+        const redeemedGifts = await Transaction.countDocuments({
+            business: businessId,
+            type: { $in: ['GIFT_REDEEM', 'gift_redemption'] }
+        });
 
         res.json({
             customers: { total: totalCustomers },
