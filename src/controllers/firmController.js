@@ -365,16 +365,17 @@ exports.getFirmStats = async (req, res) => {
         });
 
         // 4. Weekly Rewards
-        // Count KAZANIM transactions (pul/stamp earnings)
-        const weeklyStampTx = await Transaction.countDocuments({
-            business: businessId,
-            category: 'KAZANIM',
-            createdAt: { $gte: weekAgo }
-        });
-        // Sum points earned from KAZANIM transactions
+        // Sum stamps earned from STAMP type transactions
+        const weeklyStampsAgg = await Transaction.aggregate([
+            { $match: { business: new mongoose.Types.ObjectId(businessId), type: 'STAMP', stampsEarned: { $gt: 0 }, createdAt: { $gte: weekAgo } } },
+            { $group: { _id: null, total: { $sum: '$stampsEarned' } } }
+        ]);
+        const weeklyStamps = weeklyStampsAgg[0]?.total || 0;
+
+        // Sum points earned from POINT type transactions (pure point campaigns)
         const weeklyPointsAgg = await Transaction.aggregate([
-            { $match: { business: new mongoose.Types.ObjectId(businessId), category: 'KAZANIM', createdAt: { $gte: weekAgo } } },
-            { $group: { _id: null, total: { $sum: '$pointsEarned' } } }
+            { $match: { business: new mongoose.Types.ObjectId(businessId), type: 'POINT', category: 'KAZANIM', createdAt: { $gte: weekAgo } } },
+            { $group: { _id: null, total: { $sum: { $ifNull: ['$pointsEarned', '$value'] } } } }
         ]);
         const weeklyPoints = weeklyPointsAgg[0]?.total || 0;
 
@@ -442,7 +443,7 @@ exports.getFirmStats = async (req, res) => {
             },
             rewards: {
                 weeklyPoints: weeklyPoints,
-                weeklyStamps: weeklyStampTx,
+                weeklyStamps: weeklyStamps,
                 weeklyCoffee: weeklyGifts
             },
             reviews: {
