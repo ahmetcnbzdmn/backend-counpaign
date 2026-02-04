@@ -464,3 +464,98 @@ exports.getFirmStats = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+// Get Points Details for a firm
+exports.getPointsDetails = async (req, res) => {
+    try {
+        const { businessId } = req.query;
+        if (!businessId) return res.status(400).json({ error: 'Business ID required' });
+
+        const Transaction = require('../models/Transaction');
+
+        const transactions = await Transaction.find({
+            business: businessId,
+            pointsEarned: { $gt: 0 }
+        })
+            .populate('customer', 'name surname phoneNumber')
+            .sort({ createdAt: -1 })
+            .limit(500);
+
+        const result = transactions.map(tx => ({
+            _id: tx._id,
+            customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
+            customerPhone: tx.customer?.phoneNumber || '-',
+            points: tx.pointsEarned,
+            description: tx.description || '-',
+            date: tx.createdAt
+        }));
+
+        res.json(result);
+    } catch (error) {
+        console.error('Get points details error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Get Stamps Details for a firm
+exports.getStampsDetails = async (req, res) => {
+    try {
+        const { businessId } = req.query;
+        if (!businessId) return res.status(400).json({ error: 'Business ID required' });
+
+        const Transaction = require('../models/Transaction');
+
+        const transactions = await Transaction.find({
+            business: businessId,
+            stampsEarned: { $gt: 0 }
+        })
+            .populate('customer', 'name surname phoneNumber')
+            .sort({ createdAt: -1 })
+            .limit(500);
+
+        const result = transactions.map(tx => ({
+            _id: tx._id,
+            customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
+            customerPhone: tx.customer?.phoneNumber || '-',
+            stamps: tx.stampsEarned,
+            description: tx.description || '-',
+            date: tx.createdAt
+        }));
+
+        res.json(result);
+    } catch (error) {
+        console.error('Get stamps details error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Get Gifts Details for a firm
+exports.getGiftsDetails = async (req, res) => {
+    try {
+        const { businessId } = req.query;
+        if (!businessId) return res.status(400).json({ error: 'Business ID required' });
+
+        const Transaction = require('../models/Transaction');
+
+        const transactions = await Transaction.find({
+            business: businessId,
+            type: { $in: ['GIFT_REDEEM', 'gift_redemption'] }
+        })
+            .populate('customer', 'name surname phoneNumber')
+            .sort({ createdAt: -1 })
+            .limit(500);
+
+        const result = transactions.map(tx => ({
+            _id: tx._id,
+            customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
+            customerPhone: tx.customer?.phoneNumber || '-',
+            description: tx.description || 'Hediye Kullanımı',
+            date: tx.createdAt
+        }));
+
+        res.json(result);
+    } catch (error) {
+        console.error('Get gifts details error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
