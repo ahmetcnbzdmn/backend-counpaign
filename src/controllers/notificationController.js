@@ -45,8 +45,7 @@ const sendFCM = async (tokens, title, body) => {
                 const failedTokens = [];
                 response.responses.forEach((resp, idx) => {
                     if (!resp.success) {
-                        // failedTokens.push(batch[idx]);
-                        // Optional: Remove invalid tokens from DB here
+                        console.error(`❌ [FCM Error] Token: ${batch[idx]} \n   -> Code: ${resp.error.code} \n   -> Message: ${resp.error.message}`);
                     }
                 });
                 console.log(`[FCM] Batch had ${response.failureCount} failures.`);
