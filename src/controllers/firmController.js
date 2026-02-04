@@ -391,7 +391,7 @@ exports.getFirmStats = async (req, res) => {
             const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
             const count = await CustomerBusiness.countDocuments({
                 business: businessId,
-                createdAt: { $gte: dayStart, $lt: dayEnd }
+                joinedAt: { $gte: dayStart, $lt: dayEnd }
             });
             walletAddsChart.push({
                 day: `${dayStart.getDate()}/${dayStart.getMonth() + 1}`,
