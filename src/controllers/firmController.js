@@ -465,7 +465,7 @@ exports.getFirmStats = async (req, res) => {
     }
 };
 
-// Get Points Details for a firm
+// Get Points Details for a firm (Only POINT type campaigns, not stamp campaigns)
 exports.getPointsDetails = async (req, res) => {
     try {
         const { businessId } = req.query;
@@ -473,9 +473,11 @@ exports.getPointsDetails = async (req, res) => {
 
         const Transaction = require('../models/Transaction');
 
+        // Get transactions where type is POINT (pure point campaigns)
         const transactions = await Transaction.find({
             business: businessId,
-            pointsEarned: { $gt: 0 }
+            type: 'POINT',
+            category: 'KAZANIM'
         })
             .populate('customer', 'name surname phoneNumber')
             .sort({ createdAt: -1 })
@@ -485,8 +487,8 @@ exports.getPointsDetails = async (req, res) => {
             _id: tx._id,
             customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
             customerPhone: tx.customer?.phoneNumber || '-',
-            points: tx.pointsEarned,
-            description: tx.description || '-',
+            points: tx.pointsEarned || tx.value || 0,
+            campaign: tx.description || 'Puan Kampanyası',
             date: tx.createdAt
         }));
 
@@ -497,7 +499,7 @@ exports.getPointsDetails = async (req, res) => {
     }
 };
 
-// Get Stamps Details for a firm
+// Get Stamps Details for a firm (STAMP type campaigns)
 exports.getStampsDetails = async (req, res) => {
     try {
         const { businessId } = req.query;
@@ -505,8 +507,10 @@ exports.getStampsDetails = async (req, res) => {
 
         const Transaction = require('../models/Transaction');
 
+        // Get transactions where stamps were earned (stamp campaigns)
         const transactions = await Transaction.find({
             business: businessId,
+            type: 'STAMP',
             stampsEarned: { $gt: 0 }
         })
             .populate('customer', 'name surname phoneNumber')
@@ -518,7 +522,7 @@ exports.getStampsDetails = async (req, res) => {
             customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
             customerPhone: tx.customer?.phoneNumber || '-',
             stamps: tx.stampsEarned,
-            description: tx.description || '-',
+            campaign: tx.description || 'Pul Kampanyası',
             date: tx.createdAt
         }));
 
