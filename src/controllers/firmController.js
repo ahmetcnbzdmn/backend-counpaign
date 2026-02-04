@@ -637,7 +637,7 @@ exports.getAdminPointsDetails = async (req, res) => {
             category: 'KAZANIM'
         })
             .populate('customer', 'name surname phoneNumber')
-            .populate('business', 'name')
+            .populate('business', 'companyName')
             .sort({ createdAt: -1 })
             .limit(1000);
 
@@ -664,7 +664,7 @@ exports.getAdminPointsDetails = async (req, res) => {
 
             return {
                 _id: tx._id,
-                businessName: tx.business?.name || 'Bilinmeyen Firma',
+                businessName: tx.business?.companyName || 'Bilinmeyen Firma',
                 customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
                 customerPhone: tx.customer?.phoneNumber || '-',
                 points: tx.pointsEarned || tx.value || 0,
@@ -692,12 +692,12 @@ exports.getAdminStampsDetails = async (req, res) => {
             stampsEarned: { $gt: 0 }
         })
             .populate('customer', 'name surname phoneNumber')
-            .populate('business', 'name')
+            .populate('business', 'companyName')
             .sort({ createdAt: -1 })
             .limit(1000);
 
-        // Get all campaigns for status lookup
-        const campaigns = await Campaign.find();
+        // Get all campaigns for status lookup (filtering stamp campaigns)
+        const campaigns = await Campaign.find({ rewardType: 'stamp' });
         const campaignMap = {};
         campaigns.forEach(c => {
             campaignMap[c.title] = {
@@ -719,7 +719,7 @@ exports.getAdminStampsDetails = async (req, res) => {
 
             return {
                 _id: tx._id,
-                businessName: tx.business?.name || 'Bilinmeyen Firma',
+                businessName: tx.business?.companyName || 'Bilinmeyen Firma',
                 customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
                 customerPhone: tx.customer?.phoneNumber || '-',
                 stamps: tx.stampsEarned,
@@ -745,13 +745,13 @@ exports.getAdminGiftsDetails = async (req, res) => {
             type: { $in: ['GIFT_REDEEM', 'gift_redemption'] }
         })
             .populate('customer', 'name surname phoneNumber')
-            .populate('business', 'name')
+            .populate('business', 'companyName')
             .sort({ createdAt: -1 })
             .limit(1000);
 
         const result = transactions.map(tx => ({
             _id: tx._id,
-            businessName: tx.business?.name || 'Bilinmeyen Firma',
+            businessName: tx.business?.companyName || 'Bilinmeyen Firma',
             customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
             customerPhone: tx.customer?.phoneNumber || '-',
             giftName: tx.description || 'Hediye Kullanımı',
