@@ -261,14 +261,25 @@ exports.getDashboardStats = async (req, res) => {
         const totalParticipations = await Participation.countDocuments();
         const wonParticipations = await Participation.countDocuments({ hasWon: true });
 
-        // Rewards from Transactions
-        const stampTransactions = await Transaction.countDocuments({ type: 'STAMP' });
-        const redeemTransactions = await Transaction.countDocuments({ type: 'REDEEM' });
-        const pointTransactions = await Transaction.aggregate([
-            { $match: { type: 'STAMP' } },
-            { $group: { _id: null, total: { $sum: '$pointsEarned' } } }
+        // Rewards from Transactions (corrected)
+        // Sum stamps earned from STAMP type transactions
+        const stampsAgg = await Transaction.aggregate([
+            { $match: { type: 'STAMP', stampsEarned: { $gt: 0 } } },
+            { $group: { _id: null, total: { $sum: '$stampsEarned' } } }
         ]);
-        const pointsEarned = pointTransactions[0]?.total || 0;
+        const totalStampsEarned = stampsAgg[0]?.total || 0;
+
+        // Sum points earned from POINT type transactions
+        const pointsAgg = await Transaction.aggregate([
+            { $match: { type: 'POINT', category: 'KAZANIM' } },
+            { $group: { _id: null, total: { $sum: { $ifNull: ['$pointsEarned', '$value'] } } } }
+        ]);
+        const totalPointsEarned = pointsAgg[0]?.total || 0;
+
+        // Count gift redemptions
+        const totalGiftsRedeemed = await Transaction.countDocuments({
+            type: { $in: ['GIFT_REDEEM', 'gift_redemption'] }
+        });
 
         // Notifications
         const totalNotifications = await Notification.countDocuments({ type: 'USER' });
@@ -280,9 +291,6 @@ exports.getDashboardStats = async (req, res) => {
             { $group: { _id: null, avg: { $avg: '$rating' } } }
         ]);
         const avgRating = avgRatingResult[0]?.avg ? avgRatingResult[0].avg.toFixed(1) : 0;
-
-        // Gifts redeemed
-        const totalGiftsRedeemed = await Gift.countDocuments({ isRedeemed: true });
 
         res.json({
             users: {
@@ -307,8 +315,9 @@ exports.getDashboardStats = async (req, res) => {
                 won: wonParticipations
             },
             rewards: {
-                points: { earned: pointsEarned, spent: 0 },
-                stamps: { earned: stampTransactions, spent: redeemTransactions }
+                points: totalPointsEarned,
+                stamps: totalStampsEarned,
+                gifts: totalGiftsRedeemed
             },
             notifications: {
                 total: totalNotifications,
@@ -611,6 +620,148 @@ exports.getGiftsDetails = async (req, res) => {
         res.json(result);
     } catch (error) {
         console.error('Get gifts details error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// ============ ADMIN DETAIL ENDPOINTS (All Firms) ============
+
+// Get All Points Details for Admin (all firms)
+exports.getAdminPointsDetails = async (req, res) => {
+    try {
+        const Transaction = require('../models/Transaction');
+        const Campaign = require('../models/Campaign');
+
+        const transactions = await Transaction.find({
+            type: 'POINT',
+            category: 'KAZANIM'
+        })
+            .populate('customer', 'name surname phoneNumber')
+            .populate('business', 'name')
+            .sort({ createdAt: -1 })
+            .limit(1000);
+
+        // Get all campaigns for status lookup
+        const campaigns = await Campaign.find();
+        const campaignMap = {};
+        campaigns.forEach(c => {
+            campaignMap[c.title] = {
+                exists: true,
+                active: c.endDate >= new Date()
+            };
+        });
+
+        const result = transactions.map(tx => {
+            const campaignName = tx.description || 'Puan Kampanyası';
+            const titleMatch = campaignName.match(/Kampanya:\s*(.+)/);
+            const title = titleMatch ? titleMatch[1] : campaignName;
+            const campaignInfo = campaignMap[title];
+
+            let status = 'Silinmiş';
+            if (campaignInfo) {
+                status = campaignInfo.active ? 'Aktif' : 'Sona Ermiş';
+            }
+
+            return {
+                _id: tx._id,
+                businessName: tx.business?.name || 'Bilinmeyen Firma',
+                customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
+                customerPhone: tx.customer?.phoneNumber || '-',
+                points: tx.pointsEarned || tx.value || 0,
+                campaign: campaignName,
+                status,
+                date: tx.createdAt
+            };
+        });
+
+        res.json(result);
+    } catch (error) {
+        console.error('Get admin points details error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Get All Stamps Details for Admin (all firms)
+exports.getAdminStampsDetails = async (req, res) => {
+    try {
+        const Transaction = require('../models/Transaction');
+        const Campaign = require('../models/Campaign');
+
+        const transactions = await Transaction.find({
+            type: 'STAMP',
+            stampsEarned: { $gt: 0 }
+        })
+            .populate('customer', 'name surname phoneNumber')
+            .populate('business', 'name')
+            .sort({ createdAt: -1 })
+            .limit(1000);
+
+        // Get all campaigns for status lookup
+        const campaigns = await Campaign.find();
+        const campaignMap = {};
+        campaigns.forEach(c => {
+            campaignMap[c.title] = {
+                exists: true,
+                active: c.endDate >= new Date()
+            };
+        });
+
+        const result = transactions.map(tx => {
+            const campaignName = tx.description || 'Pul Kampanyası';
+            const titleMatch = campaignName.match(/Kampanya:\s*(.+)/);
+            const title = titleMatch ? titleMatch[1] : campaignName;
+            const campaignInfo = campaignMap[title];
+
+            let status = 'Silinmiş';
+            if (campaignInfo) {
+                status = campaignInfo.active ? 'Aktif' : 'Sona Ermiş';
+            }
+
+            return {
+                _id: tx._id,
+                businessName: tx.business?.name || 'Bilinmeyen Firma',
+                customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
+                customerPhone: tx.customer?.phoneNumber || '-',
+                stamps: tx.stampsEarned,
+                campaign: campaignName,
+                status,
+                date: tx.createdAt
+            };
+        });
+
+        res.json(result);
+    } catch (error) {
+        console.error('Get admin stamps details error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Get All Gifts Details for Admin (all firms)
+exports.getAdminGiftsDetails = async (req, res) => {
+    try {
+        const Transaction = require('../models/Transaction');
+
+        const transactions = await Transaction.find({
+            type: { $in: ['GIFT_REDEEM', 'gift_redemption'] }
+        })
+            .populate('customer', 'name surname phoneNumber')
+            .populate('business', 'name')
+            .sort({ createdAt: -1 })
+            .limit(1000);
+
+        const result = transactions.map(tx => ({
+            _id: tx._id,
+            businessName: tx.business?.name || 'Bilinmeyen Firma',
+            customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
+            customerPhone: tx.customer?.phoneNumber || '-',
+            giftName: tx.description || 'Hediye Kullanımı',
+            status: 'Tamamlandı',
+            date: tx.createdAt
+        }));
+
+        res.json(result);
+    } catch (error) {
+        console.error('Get admin gifts details error:', error);
         res.status(500).json({ error: error.message });
     }
 };

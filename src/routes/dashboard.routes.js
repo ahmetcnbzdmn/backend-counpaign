@@ -13,4 +13,9 @@ router.get('/points-details', firmController.getPointsDetails);
 router.get('/stamps-details', firmController.getStampsDetails);
 router.get('/gifts-details', firmController.getGiftsDetails);
 
+// Admin detail endpoints (all firms)
+router.get('/admin/points-details', firmController.getAdminPointsDetails);
+router.get('/admin/stamps-details', firmController.getAdminStampsDetails);
+router.get('/admin/gifts-details', firmController.getAdminGiftsDetails);
+
 module.exports = router;
