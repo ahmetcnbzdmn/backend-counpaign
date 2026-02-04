@@ -134,6 +134,7 @@ exports.updateFcmToken = async (req, res) => {
             return res.status(400).json({ message: 'Token gerekli.' });
         }
 
+        console.log(`📲 FCM Token Update for User ${req.user.id}: ${fcmToken}`);
         await Customer.findByIdAndUpdate(req.user.id, { fcmToken });
         res.json({ success: true, message: 'Token güncellendi.' });
     } catch (err) {
