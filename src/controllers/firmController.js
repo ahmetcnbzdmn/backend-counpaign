@@ -213,32 +213,85 @@ exports.getDashboardStats = async (req, res) => {
     try {
         const Transaction = require('../models/Transaction');
         const Participation = require('../models/Participation');
+        const Notification = require('../models/Notification');
+        const Review = require('../models/Review');
+        const Gift = require('../models/Gift');
 
+        // Date helpers
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+        // Users
         const totalUsers = await Customer.countDocuments();
+        const usersToday = await Customer.countDocuments({ createdAt: { $gte: todayStart } });
+
+        // Firms
         const totalFirms = await Business.countDocuments();
+        const firmsThisMonth = await Business.countDocuments({ createdAt: { $gte: monthStart } });
+
+        // Campaigns
         const totalCampaigns = await Campaign.countDocuments();
-        const activeCampaigns = await Campaign.countDocuments({ endDate: { $gte: new Date() } });
+        const activeCampaigns = await Campaign.countDocuments({
+            endDate: { $gte: now },
+            startDate: { $lte: now }
+        });
 
         // Transactions
         const totalTransactions = await Transaction.countDocuments();
+        const transactionsToday = await Transaction.countDocuments({ createdAt: { $gte: todayStart } });
 
-        // Simple mock chart for now (or calculate real last 7 days)
-        // For stability, returning empty chart array is safer than code that might fail
+        // Transaction chart (last 7 days)
         const transactionChart = [];
+        const dayNames = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+        for (let i = 6; i >= 0; i--) {
+            const dayStart = new Date(todayStart.getTime() - i * 24 * 60 * 60 * 1000);
+            const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+            const count = await Transaction.countDocuments({
+                createdAt: { $gte: dayStart, $lt: dayEnd }
+            });
+            transactionChart.push({
+                day: dayNames[dayStart.getDay()],
+                count
+            });
+        }
 
         // Participations
         const totalParticipations = await Participation.countDocuments();
+        const wonParticipations = await Participation.countDocuments({ hasWon: true });
 
-        // ... (previous code)
+        // Rewards from Transactions
+        const stampTransactions = await Transaction.countDocuments({ type: 'STAMP' });
+        const redeemTransactions = await Transaction.countDocuments({ type: 'REDEEM' });
+        const pointTransactions = await Transaction.aggregate([
+            { $match: { type: 'STAMP' } },
+            { $group: { _id: null, total: { $sum: '$pointsEarned' } } }
+        ]);
+        const pointsEarned = pointTransactions[0]?.total || 0;
+
+        // Notifications
+        const totalNotifications = await Notification.countDocuments({ type: 'USER' });
+        const unreadNotifications = await Notification.countDocuments({ type: 'USER', isRead: false, isDeleted: { $ne: true } });
+
+        // Reviews
+        const totalReviews = await Review.countDocuments();
+        const avgRatingResult = await Review.aggregate([
+            { $group: { _id: null, avg: { $avg: '$rating' } } }
+        ]);
+        const avgRating = avgRatingResult[0]?.avg ? avgRatingResult[0].avg.toFixed(1) : 0;
+
+        // Gifts redeemed
+        const totalGiftsRedeemed = await Gift.countDocuments({ isRedeemed: true });
 
         res.json({
             users: {
                 total: totalUsers,
-                today: 0
+                today: usersToday
             },
             firms: {
                 total: totalFirms,
-                month: 0
+                month: firmsThisMonth
             },
             campaigns: {
                 total: totalCampaigns,
@@ -246,16 +299,27 @@ exports.getDashboardStats = async (req, res) => {
             },
             transactions: {
                 total: totalTransactions,
-                today: 0,
+                today: transactionsToday,
                 chart: transactionChart
             },
             participations: {
                 total: totalParticipations,
-                won: 0
+                won: wonParticipations
             },
             rewards: {
-                points: { earned: 0, spent: 0 },
-                stamps: { earned: 0, spent: 0 }
+                points: { earned: pointsEarned, spent: 0 },
+                stamps: { earned: stampTransactions, spent: redeemTransactions }
+            },
+            notifications: {
+                total: totalNotifications,
+                unread: unreadNotifications
+            },
+            reviews: {
+                total: totalReviews,
+                avgRating: parseFloat(avgRating)
+            },
+            gifts: {
+                redeemed: totalGiftsRedeemed
             }
         });
     } catch (error) {
