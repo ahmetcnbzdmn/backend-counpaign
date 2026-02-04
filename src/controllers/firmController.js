@@ -473,6 +473,7 @@ exports.getPointsDetails = async (req, res) => {
         if (!businessId) return res.status(400).json({ error: 'Business ID required' });
 
         const Transaction = require('../models/Transaction');
+        const Campaign = require('../models/Campaign');
 
         // Get transactions where type is POINT (pure point campaigns)
         const transactions = await Transaction.find({
@@ -484,14 +485,38 @@ exports.getPointsDetails = async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(500);
 
-        const result = transactions.map(tx => ({
-            _id: tx._id,
-            customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
-            customerPhone: tx.customer?.phoneNumber || '-',
-            points: tx.pointsEarned || tx.value || 0,
-            campaign: tx.description || 'Puan Kampanyası',
-            date: tx.createdAt
-        }));
+        // Get all campaigns for this business to check status
+        const campaigns = await Campaign.find({ businessId });
+        const campaignMap = {};
+        campaigns.forEach(c => {
+            campaignMap[c.title] = {
+                exists: true,
+                active: c.endDate >= new Date()
+            };
+        });
+
+        const result = transactions.map(tx => {
+            const campaignName = tx.description || 'Puan Kampanyası';
+            // Extract campaign title from description (format: "Kampanya: Title")
+            const titleMatch = campaignName.match(/Kampanya:\s*(.+)/);
+            const title = titleMatch ? titleMatch[1] : campaignName;
+            const campaignInfo = campaignMap[title];
+
+            let status = 'Silinmiş';
+            if (campaignInfo) {
+                status = campaignInfo.active ? 'Aktif' : 'Sona Ermiş';
+            }
+
+            return {
+                _id: tx._id,
+                customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
+                customerPhone: tx.customer?.phoneNumber || '-',
+                points: tx.pointsEarned || tx.value || 0,
+                campaign: campaignName,
+                status,
+                date: tx.createdAt
+            };
+        });
 
         res.json(result);
     } catch (error) {
@@ -507,6 +532,7 @@ exports.getStampsDetails = async (req, res) => {
         if (!businessId) return res.status(400).json({ error: 'Business ID required' });
 
         const Transaction = require('../models/Transaction');
+        const Campaign = require('../models/Campaign');
 
         // Get transactions where stamps were earned (stamp campaigns)
         const transactions = await Transaction.find({
@@ -518,14 +544,37 @@ exports.getStampsDetails = async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(500);
 
-        const result = transactions.map(tx => ({
-            _id: tx._id,
-            customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
-            customerPhone: tx.customer?.phoneNumber || '-',
-            stamps: tx.stampsEarned,
-            campaign: tx.description || 'Pul Kampanyası',
-            date: tx.createdAt
-        }));
+        // Get all campaigns for this business to check status
+        const campaigns = await Campaign.find({ businessId });
+        const campaignMap = {};
+        campaigns.forEach(c => {
+            campaignMap[c.title] = {
+                exists: true,
+                active: c.endDate >= new Date()
+            };
+        });
+
+        const result = transactions.map(tx => {
+            const campaignName = tx.description || 'Pul Kampanyası';
+            const titleMatch = campaignName.match(/Kampanya:\s*(.+)/);
+            const title = titleMatch ? titleMatch[1] : campaignName;
+            const campaignInfo = campaignMap[title];
+
+            let status = 'Silinmiş';
+            if (campaignInfo) {
+                status = campaignInfo.active ? 'Aktif' : 'Sona Ermiş';
+            }
+
+            return {
+                _id: tx._id,
+                customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
+                customerPhone: tx.customer?.phoneNumber || '-',
+                stamps: tx.stampsEarned,
+                campaign: campaignName,
+                status,
+                date: tx.createdAt
+            };
+        });
 
         res.json(result);
     } catch (error) {
@@ -554,7 +603,8 @@ exports.getGiftsDetails = async (req, res) => {
             _id: tx._id,
             customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
             customerPhone: tx.customer?.phoneNumber || '-',
-            description: tx.description || 'Hediye Kullanımı',
+            giftName: tx.description || 'Hediye Kullanımı',
+            status: 'Tamamlandı', // Gift redemptions are always completed
             date: tx.createdAt
         }));
 
