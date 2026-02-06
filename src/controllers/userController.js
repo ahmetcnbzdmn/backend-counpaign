@@ -62,7 +62,7 @@ exports.getUserCafes = async (req, res) => {
         const { id } = req.params;
 
         const cafes = await CustomerBusiness.find({ customer: id })
-            .populate('business', 'companyName category cardColor')
+            .populate('business', 'companyName category cardColor logo cardIcon')
             .sort({ joinedAt: -1 });
 
         res.json(cafes);
