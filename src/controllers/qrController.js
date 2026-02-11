@@ -218,7 +218,8 @@ exports.confirmParticipation = async (req, res) => {
 
         // Mark token as used
         qrToken.status = 'used';
-        await qrToken.save();
+
+        // ... (Transaction creation below)
 
         // Find or create CustomerBusiness record
         let customerBusiness = await CustomerBusiness.findOne({
@@ -261,7 +262,7 @@ exports.confirmParticipation = async (req, res) => {
         const isStamp = campaign.rewardType === 'stamp';
         const rewardVal = campaign.rewardValue || (isStamp ? 1 : 0);
 
-        await Transaction.create({
+        const transaction = await Transaction.create({
             customer: customerId,
             business: businessId,
             type: isStamp ? 'STAMP' : 'POINT',
@@ -273,10 +274,15 @@ exports.confirmParticipation = async (req, res) => {
             status: 'COMPLETED'
         });
 
+        // Link transaction to QR token
+        qrToken.transaction = transaction._id;
+        await qrToken.save();
+
         console.log(`✅ Participation confirmed for ${campaign.title} - Type: ${campaign.rewardType}, Value: ${campaign.rewardValue}`);
 
         res.json({
             message: 'Participation confirmed successfully',
+            transactionId: transaction._id,
             customerBusiness: {
                 stamps: customerBusiness.stamps,
                 giftsCount: customerBusiness.giftsCount,
@@ -422,7 +428,7 @@ exports.checkCustomerStatus = async (req, res) => {
             return res.json({
                 status: 'used',
                 message: 'İşlem Onaylandı',
-                // Could add reward details here if we fetched them
+                transactionId: qrToken.transaction // Important for review submission
             });
         }
 

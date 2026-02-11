@@ -16,6 +16,11 @@ const qrTokenSchema = new mongoose.Schema({
         ref: 'Business',
         required: false // For business-generated QR codes
     },
+    transaction: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Transaction',
+        required: false
+    },
     type: {
         type: String,
         enum: ['login', 'payment', 'campaign', 'business_scan', 'gift_redemption'],

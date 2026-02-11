@@ -297,9 +297,14 @@ exports.completeRedemption = async (req, res) => {
         });
         await tran.save();
 
+        qrToken.status = 'used';
+        qrToken.transaction = tran._id;
+        await qrToken.save();
+
         res.json({
             success: true,
             message: 'Teslimat onaylandı.',
+            transactionId: tran._id,
             gift: title,
             customer: `${qrToken.user.name} ${qrToken.user.surname}`,
             redemptionType: type
