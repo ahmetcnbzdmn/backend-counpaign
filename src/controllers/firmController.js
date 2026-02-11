@@ -189,18 +189,45 @@ exports.deleteFirm = async (req, res) => {
 
         const deletedNotifications = deletedBusinessNotifications.deletedCount + deletedUserNotifications.deletedCount;
 
-        // 9. Delete the firm itself
+        // 9. Delete all products for this business
+        const Product = require('../models/Product');
+        const fs = require('fs');
+        const path = require('path');
+
+        // Find products to delete images first
+        const productsToDelete = await Product.find({ business: req.params.id });
+        let deletedImagesCount = 0;
+
+        for (const product of productsToDelete) {
+            if (product.imageUrl) {
+                const imagePath = path.join(__dirname, '../../', product.imageUrl);
+                if (fs.existsSync(imagePath)) {
+                    try {
+                        fs.unlinkSync(imagePath);
+                        deletedImagesCount++;
+                    } catch (err) {
+                        console.error(`Failed to delete image: ${imagePath}`, err);
+                    }
+                }
+            }
+        }
+
+        const deletedProducts = await Product.deleteMany({ business: req.params.id });
+        console.log(`🗑️ Deleted ${deletedProducts.deletedCount} products and ${deletedImagesCount} images`);
+
+        // 10. Delete the firm itself
         await Business.findByIdAndDelete(req.params.id);
 
         console.log('✅ Firm deleted:', firm.companyName);
         res.json({
-            message: 'Firma, ilişkili kampanyalar, hediyeler, işlemler, bildirimler ve müşteri bağlantıları başarıyla silindi',
+            message: 'Firma, ilişkili kampanyalar, hediyeler, ürünler, işlemler, bildirimler ve müşteri bağlantıları başarıyla silindi',
             details: {
                 campaigns: deletedCampaigns.deletedCount,
                 participations: deletedParticipations.deletedCount,
                 customerBusinessRelations: deletedRelations.deletedCount,
                 qrTokens: deletedQRTokens.deletedCount,
                 gifts: deletedGifts.deletedCount,
+                products: deletedProducts.deletedCount,
                 transactions: deletedTransactions.deletedCount,
                 reviews: deletedReviews.deletedCount,
                 notifications: deletedNotifications.deletedCount,
