@@ -94,6 +94,49 @@ exports.validateQR = async (req, res) => {
             // Create a temporary QRToken for the confirmation flow
             // (so existing checkStatus/confirm/cancel flow keeps working)
             const tempToken = crypto.randomBytes(16).toString('hex');
+
+            // Check if this customer has a pending gift_redemption for this business
+            const pendingGift = await QRToken.findOne({
+                user: customerId,
+                business: business._id,
+                type: 'gift_redemption',
+                status: 'active'
+            });
+
+            if (pendingGift) {
+                // Gift redemption flow — mark the gift token as scanned
+                pendingGift.status = 'scanned';
+                await pendingGift.save();
+
+                const tempQR = new QRToken({
+                    token: tempToken,
+                    business: business._id,
+                    type: 'gift_redemption',
+                    status: 'scanned',
+                    scannedBy: customerId,
+                    metadata: pendingGift.metadata
+                });
+                await tempQR.save();
+
+                console.log(`🎁 Static QR scanned for GIFT redemption - Customer ${customerId}, Gift: ${pendingGift.metadata?.title}`);
+
+                return res.json({
+                    business: {
+                        id: business._id,
+                        name: business.companyName
+                    },
+                    giftRedemption: {
+                        title: pendingGift.metadata?.title,
+                        type: pendingGift.metadata?.type,
+                        pointCost: pendingGift.metadata?.pointCost,
+                        giftTokenId: pendingGift._id
+                    },
+                    qrTokenId: tempQR._id,
+                    pollToken: tempToken
+                });
+            }
+
+            // Normal campaign scan flow
             const tempQR = new QRToken({
                 token: tempToken,
                 business: business._id,
@@ -305,9 +348,10 @@ exports.pollStaticQR = async (req, res) => {
         }
 
         // Find the most recent scanned (but not yet confirmed) QRToken for this business
+        // Check BOTH business_scan and gift_redemption types
         const qrToken = await QRToken.findOne({
             business: businessId,
-            type: 'business_scan',
+            type: { $in: ['business_scan', 'gift_redemption'] },
             status: 'scanned'
         })
             .sort({ createdAt: -1 })
@@ -317,7 +361,24 @@ exports.pollStaticQR = async (req, res) => {
             return res.json({ status: 'waiting' });
         }
 
-        // Get participations for this customer
+        // If this is a gift redemption scan
+        if (qrToken.type === 'gift_redemption' && qrToken.metadata) {
+            console.log(`🎁 Static QR poll - Gift redemption by: ${qrToken.scannedBy.name} ${qrToken.scannedBy.surname}`);
+
+            return res.json({
+                status: 'scanned',
+                scanType: 'gift_redemption',
+                customer: qrToken.scannedBy,
+                giftRedemption: {
+                    title: qrToken.metadata.title,
+                    type: qrToken.metadata.type,
+                    pointCost: qrToken.metadata.pointCost
+                },
+                qrTokenId: qrToken._id.toString()
+            });
+        }
+
+        // Normal campaign scan — get participations
         const Campaign = require('../models/Campaign');
         const campaigns = await Campaign.find({ businessId });
         const campaignIds = campaigns.map(c => c._id);
@@ -331,6 +392,7 @@ exports.pollStaticQR = async (req, res) => {
 
         return res.json({
             status: 'scanned',
+            scanType: 'campaign',
             customer: qrToken.scannedBy,
             participations,
             qrTokenId: qrToken._id.toString()

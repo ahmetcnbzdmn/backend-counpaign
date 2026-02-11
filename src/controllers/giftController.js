@@ -228,16 +228,33 @@ exports.verifyRedemptionCode = async (req, res) => {
 // 7c. Complete Redemption (Verify & Deduct) - Business
 exports.completeRedemption = async (req, res) => {
     try {
-        const { token } = req.body;
+        const { token, qrTokenId } = req.body;
         const businessId = req.user.id;
 
+        let qrToken;
 
-        const qrToken = await QRToken.findOne({
-            token: token.toUpperCase(),
-            business: businessId,
-            type: 'gift_redemption',
-            status: 'active'
-        }).populate('user');
+        if (qrTokenId) {
+            // New flow: find by QRToken ID (from static QR scan)
+            qrToken = await QRToken.findOne({
+                _id: qrTokenId,
+                business: businessId,
+                type: 'gift_redemption',
+                status: 'scanned'
+            }).populate('user scannedBy');
+
+            // scannedBy is the customer in the new flow
+            if (qrToken && !qrToken.user && qrToken.scannedBy) {
+                qrToken.user = qrToken.scannedBy;
+            }
+        } else if (token) {
+            // Legacy flow: find by 6-char code
+            qrToken = await QRToken.findOne({
+                token: token.toUpperCase(),
+                business: businessId,
+                type: 'gift_redemption',
+                status: 'active'
+            }).populate('user');
+        }
 
         if (!qrToken) {
             return res.status(404).json({ message: 'Geçersiz kod.' });
