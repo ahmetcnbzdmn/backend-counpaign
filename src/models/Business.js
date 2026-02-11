@@ -54,6 +54,13 @@ const businessSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    // Permanent QR Code Token for this business
+    staticQR: {
+        type: String,
+        unique: true,
+        sparse: true, // Allows null for existing firms without QR
+        default: null
+    },
     createdAt: {
         type: Date,
         default: Date.now

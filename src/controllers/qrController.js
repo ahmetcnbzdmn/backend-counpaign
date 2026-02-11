@@ -43,52 +43,107 @@ exports.validateQR = async (req, res) => {
             return res.status(401).json({ error: 'Customer ID not found in token' });
         }
 
-        // Find and validate token
+        let business = null;
+
+        // 1. First try finding in QRToken collection (legacy dynamic QR)
         const qrToken = await QRToken.findOne({ token, status: 'active' }).populate('business');
 
-        if (!qrToken) {
-            return res.status(404).json({ error: 'Invalid or expired QR code' });
-        }
+        if (qrToken && qrToken.type === 'business_scan') {
+            business = qrToken.business;
 
-        if (qrToken.type !== 'business_scan') {
-            return res.status(400).json({ error: 'Invalid QR code type' });
-        }
+            // Validate Expected Business (Prevent cross-business scanning)
+            const { expectedBusinessId } = req.body;
+            if (expectedBusinessId && business._id.toString() !== expectedBusinessId) {
+                return res.status(400).json({
+                    error: 'Firm Mismatch',
+                    details: {
+                        expected: expectedBusinessId,
+                        actual: business._id,
+                        actualName: business.companyName
+                    }
+                });
+            }
 
-        // Validate Expected Business (Prevent cross-business scanning)
-        const { expectedBusinessId } = req.body;
-        if (expectedBusinessId && qrToken.business._id.toString() !== expectedBusinessId) {
-            return res.status(400).json({
-                error: 'Firm Mismatch',
-                details: {
-                    expected: expectedBusinessId,
-                    actual: qrToken.business._id,
-                    actualName: qrToken.business.companyName
-                }
+            // Mark token as scanned
+            qrToken.status = 'scanned';
+            qrToken.scannedBy = customerId;
+            await qrToken.save();
+
+        } else {
+            // 2. Try finding as a static QR token on a Business
+            const Business = require('../models/Business');
+            business = await Business.findOne({ staticQR: token });
+
+            if (!business) {
+                return res.status(404).json({ error: 'Invalid or expired QR code' });
+            }
+
+            // Validate Expected Business
+            const { expectedBusinessId } = req.body;
+            if (expectedBusinessId && business._id.toString() !== expectedBusinessId) {
+                return res.status(400).json({
+                    error: 'Firm Mismatch',
+                    details: {
+                        expected: expectedBusinessId,
+                        actual: business._id,
+                        actualName: business.companyName
+                    }
+                });
+            }
+
+            // Create a temporary QRToken for the confirmation flow
+            // (so existing checkStatus/confirm/cancel flow keeps working)
+            const tempToken = crypto.randomBytes(16).toString('hex');
+            const tempQR = new QRToken({
+                token: tempToken,
+                business: business._id,
+                type: 'business_scan',
+                status: 'scanned',
+                scannedBy: customerId
+            });
+            await tempQR.save();
+
+            // Return the temp token so the mobile app polls with it
+            const Campaign = require('../models/Campaign');
+            const campaigns = await Campaign.find({ businessId: business._id });
+            const campaignIds = campaigns.map(c => c._id);
+
+            const participations = await Participation.find({
+                customer: customerId,
+                campaign: { $in: campaignIds },
+                business: business._id
+            }).populate('campaign');
+
+            console.log(`✅ Static QR scanned - Customer ${customerId} has ${participations.length} participations for ${business.companyName}`);
+
+            return res.json({
+                business: {
+                    id: business._id,
+                    name: business.companyName
+                },
+                participations,
+                qrTokenId: tempQR._id,
+                pollToken: tempToken  // Mobile app should use this for polling
             });
         }
 
-        // Get customer's participations for this business's campaigns
+        // Get customer's participations for this business's campaigns (legacy flow)
         const Campaign = require('../models/Campaign');
-        const campaigns = await Campaign.find({ businessId: qrToken.business._id });
+        const campaigns = await Campaign.find({ businessId: business._id });
         const campaignIds = campaigns.map(c => c._id);
 
         const participations = await Participation.find({
             customer: customerId,
             campaign: { $in: campaignIds },
-            business: qrToken.business._id
+            business: business._id
         }).populate('campaign');
-
-        // Mark token as scanned
-        qrToken.status = 'scanned';
-        qrToken.scannedBy = customerId;
-        await qrToken.save();
 
         console.log(`✅ QR scanned - Customer ${customerId} has ${participations.length} participations`);
 
         res.json({
             business: {
-                id: qrToken.business._id,
-                name: qrToken.business.companyName
+                id: business._id,
+                name: business.companyName
             },
             participations,
             qrTokenId: qrToken._id
@@ -236,6 +291,52 @@ exports.checkStatus = async (req, res) => {
         res.json({ status: qrToken.status });
     } catch (error) {
         console.error('Check QR status error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Poll for static QR scans (admin panel uses this instead of checkStatus)
+exports.pollStaticQR = async (req, res) => {
+    try {
+        const businessId = req.user?.id;
+
+        if (!businessId) {
+            return res.status(400).json({ error: 'Business ID required' });
+        }
+
+        // Find the most recent scanned (but not yet confirmed) QRToken for this business
+        const qrToken = await QRToken.findOne({
+            business: businessId,
+            type: 'business_scan',
+            status: 'scanned'
+        })
+            .sort({ createdAt: -1 })
+            .populate('scannedBy', 'name surname email phoneNumber');
+
+        if (!qrToken || !qrToken.scannedBy) {
+            return res.json({ status: 'waiting' });
+        }
+
+        // Get participations for this customer
+        const Campaign = require('../models/Campaign');
+        const campaigns = await Campaign.find({ businessId });
+        const campaignIds = campaigns.map(c => c._id);
+
+        const participations = await Participation.find({
+            customer: qrToken.scannedBy._id,
+            campaign: { $in: campaignIds }
+        }).populate('campaign');
+
+        console.log(`📱 Static QR poll - Found scan by: ${qrToken.scannedBy.name} ${qrToken.scannedBy.surname}`);
+
+        return res.json({
+            status: 'scanned',
+            customer: qrToken.scannedBy,
+            participations,
+            qrTokenId: qrToken._id.toString()
+        });
+    } catch (error) {
+        console.error('Poll static QR error:', error);
         res.status(500).json({ error: error.message });
     }
 };

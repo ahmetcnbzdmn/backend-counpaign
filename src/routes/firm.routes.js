@@ -26,5 +26,8 @@ router.get('/:id', firmController.getFirmById);
 router.post('/', upload.single('logo'), firmController.createFirm);
 router.put('/:id', upload.single('logo'), firmController.updateFirm);
 router.delete('/:id', firmController.deleteFirm);
+// Static QR management
+router.post('/:id/generate-qr', firmController.generateStaticQR);
+router.get('/:id/qr', firmController.getStaticQR);
 
 module.exports = router;

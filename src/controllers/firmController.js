@@ -1,6 +1,7 @@
 const Business = require('../models/Business');
 const Customer = require('../models/Customer');
 const Campaign = require('../models/Campaign');
+const crypto = require('crypto');
 
 // Get all firms (for admin panel)
 exports.getAllFirms = async (req, res) => {
@@ -52,6 +53,9 @@ exports.createFirm = async (req, res) => {
         // Logo URL from uploaded file
         const logoUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
+        // Auto-generate permanent QR token for this firm
+        const staticQR = crypto.randomBytes(32).toString('hex');
+
         const newFirm = new Business({
             companyName: name,
             email,
@@ -63,6 +67,7 @@ exports.createFirm = async (req, res) => {
             city: settings.city || 'Ankara',
             district: settings.district || '',
             neighborhood: settings.neighborhood || '',
+            staticQR,
             settings: {
                 pointsPerVisit: 10,
                 redemptionThreshold: 100,
@@ -204,6 +209,49 @@ exports.deleteFirm = async (req, res) => {
         });
     } catch (error) {
         console.error('Delete firm error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Generate static QR for an existing firm (for firms without one)
+exports.generateStaticQR = async (req, res) => {
+    try {
+        const firm = await Business.findById(req.params.id);
+        if (!firm) {
+            return res.status(404).json({ error: 'Firma bulunamadı' });
+        }
+
+        if (firm.staticQR) {
+            return res.status(400).json({ error: 'Bu firma zaten bir QR koduna sahip', staticQR: firm.staticQR });
+        }
+
+        const staticQR = crypto.randomBytes(32).toString('hex');
+        firm.staticQR = staticQR;
+        await firm.save();
+
+        console.log(`✅ Static QR generated for firm: ${firm.companyName}`);
+        res.json({ staticQR, companyName: firm.companyName });
+    } catch (error) {
+        console.error('Generate static QR error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Get static QR for a firm
+exports.getStaticQR = async (req, res) => {
+    try {
+        const firm = await Business.findById(req.params.id).select('staticQR companyName');
+        if (!firm) {
+            return res.status(404).json({ error: 'Firma bulunamadı' });
+        }
+
+        if (!firm.staticQR) {
+            return res.status(404).json({ error: 'Bu firma için QR kodu oluşturulmamış' });
+        }
+
+        res.json({ staticQR: firm.staticQR, companyName: firm.companyName });
+    } catch (error) {
+        console.error('Get static QR error:', error);
         res.status(500).json({ error: error.message });
     }
 };
