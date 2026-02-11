@@ -24,6 +24,12 @@ const productSchema = new mongoose.Schema({
         type: String, // Full URL or relative path
         default: null
     },
+    category: {
+        type: String,
+        enum: ['Sıcak Kahveler', 'Soğuk Kahveler', 'Sıcak İçecekler', 'Soğuk İçecekler', 'Tatlılar'],
+        default: 'Sıcak Kahveler',
+        required: true
+    },
     isPopular: {
         type: Boolean,
         default: false
