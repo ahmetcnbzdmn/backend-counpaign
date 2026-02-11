@@ -8,5 +8,6 @@ router.put('/profile', authMiddleware, customerController.updateProfile);
 router.get('/transactions', authMiddleware, customerController.getTransactions);
 router.post('/reviews', authMiddleware, require('../controllers/reviewController').createReview);
 router.get('/reviews', authMiddleware, require('../controllers/reviewController').getReviews);
+router.get('/reviews/pending', authMiddleware, require('../controllers/reviewController').getPendingReviews);
 
 module.exports = router;

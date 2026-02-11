@@ -9,6 +9,9 @@ router.post('/', verifyToken, reviewController.createReview);
 // Get my reviews (Mobile App User)
 router.get('/my-reviews', verifyToken, reviewController.getReviews);
 
+// Get my pending reviews (Mobile App User)
+router.get('/pending', verifyToken, reviewController.getPendingReviews);
+
 // Get ALL reviews (Super Admin)
 router.get('/all', verifyToken, isSuperAdmin, reviewController.getAllReviews);
 

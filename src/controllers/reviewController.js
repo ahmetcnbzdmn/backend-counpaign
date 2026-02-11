@@ -60,6 +60,22 @@ exports.getReviews = async (req, res) => {
         res.status(500).json({ message: 'Değerlendirmeler alınamadı.' });
     }
 };
+
+exports.getPendingReviews = async (req, res) => {
+    try {
+        const transactions = await Transaction.find({
+            customer: req.user.id,
+            review: { $exists: false }
+        })
+            .populate('business', 'companyName logo cardColor')
+            .sort({ createdAt: -1 });
+
+        res.json(transactions);
+    } catch (err) {
+        console.error("Get Pending Reviews Error:", err);
+        res.status(500).json({ message: 'Bekleyen değerlendirmeler alınamadı.' });
+    }
+};
 // Get all reviews (Super Admin) - Full details
 exports.getAllReviews = async (req, res) => {
     try {
