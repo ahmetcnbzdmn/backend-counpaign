@@ -17,14 +17,16 @@ exports.getBusinessProducts = async (req, res) => {
 exports.createProduct = async (req, res) => {
     try {
         const businessId = req.user.id; // From auth middleware (firm admin)
-        const { name, description, price, isPopular } = req.body;
+        const { name, description, price, isPopular, discount, isAvailable } = req.body;
 
         const product = new Product({
             business: businessId,
             name,
             description,
-            price,
+            price: Number(price),
+            discount: Number(discount) || 0,
             isPopular: isPopular === 'true' || isPopular === true,
+            isAvailable: isAvailable !== 'false' && isAvailable !== false,
             imageUrl: req.file ? `/uploads/products/${req.file.filename}` : null
         });
 
@@ -62,6 +64,15 @@ exports.updateProduct = async (req, res) => {
 
         if (updates.isPopular !== undefined) {
             updates.isPopular = updates.isPopular === 'true' || updates.isPopular === true;
+        }
+        if (updates.isAvailable !== undefined) {
+            updates.isAvailable = updates.isAvailable === 'true' || updates.isAvailable === true;
+        }
+        if (updates.discount !== undefined) {
+            updates.discount = Number(updates.discount) || 0;
+        }
+        if (updates.price !== undefined) {
+            updates.price = Number(updates.price);
         }
 
         const updatedProduct = await Product.findByIdAndUpdate(id, updates, { new: true });

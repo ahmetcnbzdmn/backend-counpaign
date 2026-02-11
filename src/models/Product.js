@@ -34,6 +34,15 @@ const productSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    discount: {
+        type: Number, // TL discount amount
+        default: 0,
+        min: 0
+    },
+    isAvailable: {
+        type: Boolean,
+        default: true
+    },
     createdAt: {
         type: Date,
         default: Date.now
