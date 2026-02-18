@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const fs = require('fs');
 
 const app = express();
 
@@ -11,7 +12,12 @@ app.use(helmet({
 }));
 app.use(cors());
 const path = require('path');
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// Ensure uploads directory exists at startup
+const uploadsDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+app.use('/uploads', express.static(uploadsDir));
 
 // Request Logger
 app.use((req, res, next) => {
