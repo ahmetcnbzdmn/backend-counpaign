@@ -24,20 +24,28 @@ const campaignSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    rewardType: {
+    // Menu integration fields
+    menuItems: [{
+        productId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Product'
+        },
+        productName: String,
+        price: Number
+    }],
+    discountAmount: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+    reflectToMenu: {
+        type: Boolean,
+        default: false
+    },
+    bundleName: {
         type: String,
-        enum: ['points', 'stamp'],
-        required: true
-    },
-    rewardValue: {
-        type: Number,
-        required: true,
-        default: 1
-    },
-    rewardValidityDays: {
-        type: Number,
-        required: true,
-        default: 30 // Default validity: 30 days
+        trim: true,
+        default: ''
     },
     icon: {
         type: String, // Flutter Icon name

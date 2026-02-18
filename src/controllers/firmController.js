@@ -757,8 +757,8 @@ exports.getAdminStampsDetails = async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(1000);
 
-        // Get all campaigns for status lookup (filtering stamp campaigns)
-        const campaigns = await Campaign.find({ rewardType: 'stamp' });
+        // Get all campaigns for status lookup
+        const campaigns = await Campaign.find({});
         const campaignMap = {};
         campaigns.forEach(c => {
             campaignMap[c.title] = {

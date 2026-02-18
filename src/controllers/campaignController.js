@@ -1,4 +1,5 @@
 const Campaign = require('../models/Campaign');
+const Product = require('../models/Product');
 
 // @desc    Create a new campaign
 // @route   POST /api/campaigns
@@ -13,14 +14,15 @@ exports.createCampaign = async (req, res) => {
             title,
             shortDescription,
             content,
-            rewardType,
-            rewardValue,
-            rewardValidityDays,
             icon,
             isPromoted,
             displayOrder,
             startDate,
-            endDate
+            endDate,
+            menuItems,
+            discountAmount,
+            reflectToMenu,
+            bundleName
         } = req.body;
 
         // Use businessId from request body (admin panel sends it)
@@ -34,23 +36,54 @@ exports.createCampaign = async (req, res) => {
         // Image URL from uploaded file
         const headerImage = req.file ? `/uploads/${req.file.filename}` : null;
 
+        // Parse menuItems if it's a JSON string
+        let parsedMenuItems = [];
+        if (menuItems) {
+            try {
+                parsedMenuItems = typeof menuItems === 'string' ? JSON.parse(menuItems) : menuItems;
+            } catch (e) {
+                console.warn('Failed to parse menuItems:', e);
+            }
+        }
+
         const campaign = new Campaign({
             businessId: finalBusinessId,
             title,
             shortDescription,
             headerImage,
             content,
-            rewardType,
-            rewardValue: parseInt(rewardValue),
-            rewardValidityDays: parseInt(rewardValidityDays),
             icon,
             isPromoted: isPromoted === 'true' || isPromoted === true,
             displayOrder: parseInt(displayOrder) || 0,
             startDate: startDate ? new Date(startDate) : new Date(),
-            endDate: endDate ? new Date(endDate) : new Date()
+            endDate: endDate ? new Date(endDate) : new Date(),
+            menuItems: parsedMenuItems,
+            discountAmount: parseFloat(discountAmount) || 0,
+            reflectToMenu: reflectToMenu === 'true' || reflectToMenu === true,
+            bundleName: bundleName || ''
         });
 
         await campaign.save();
+
+        // If reflectToMenu is true, create a Product in "Fırsatlar" category
+        if (campaign.reflectToMenu && parsedMenuItems.length > 0) {
+            const totalPrice = parsedMenuItems.reduce((sum, item) => sum + (item.price || 0), 0);
+            const productName = campaign.bundleName || parsedMenuItems.map(i => i.productName).join(' + ');
+
+            await Product.create({
+                business: finalBusinessId,
+                name: productName,
+                description: campaign.shortDescription,
+                price: totalPrice,
+                discount: campaign.discountAmount || 0,
+                category: 'Fırsatlar',
+                isPopular: false,
+                isAvailable: true,
+                campaignId: campaign._id,
+                imageUrl: headerImage
+            });
+            console.log('🎁 Fırsatlar menu item created for campaign:', title);
+        }
 
         console.log('✅ Campaign created:', title);
         res.status(201).json({
@@ -84,15 +117,8 @@ exports.getCampaignsByBusiness = async (req, res) => {
 // @access  Public
 exports.getAllCampaigns = async (req, res) => {
     try {
-        // Fetch all campaigns, sort by newest
-        // We populate business details so frontend can display Company Name & Color
         const campaigns = await Campaign.find({})
             .sort({ createdAt: -1 });
-
-        // If we can't populate because of Schema definition, frontend might need to fetch businesses.
-        // But let's try to return them.
-        // Assuming strict schema is not enforcing ref check failure on find if not populated.
-        // Actually, without populate, we just get businessId.
 
         res.json(campaigns);
     } catch (err) {
@@ -111,19 +137,31 @@ exports.updateCampaign = async (req, res) => {
         console.log('   Body:', req.body);
         console.log('   File:', req.file);
 
-        // Find campaign (no businessId restriction for admin panel)
         const campaign = await Campaign.findById(id);
 
         if (!campaign) {
             return res.status(404).json({ error: 'Campaign not found' });
         }
 
+        // Parse menuItems if provided
+        if (req.body.menuItems) {
+            try {
+                req.body.menuItems = typeof req.body.menuItems === 'string'
+                    ? JSON.parse(req.body.menuItems)
+                    : req.body.menuItems;
+            } catch (e) {
+                console.warn('Failed to parse menuItems on update:', e);
+            }
+        }
+
         // Update fields from request body
         const updates = Object.keys(req.body);
         updates.forEach((update) => {
-            if (update === 'rewardValue' || update === 'rewardValidityDays' || update === 'displayOrder') {
+            if (update === 'displayOrder') {
                 campaign[update] = parseInt(req.body[update]);
-            } else if (update === 'isPromoted') {
+            } else if (update === 'discountAmount') {
+                campaign[update] = parseFloat(req.body[update]) || 0;
+            } else if (update === 'isPromoted' || update === 'reflectToMenu') {
                 campaign[update] = req.body[update] === 'true' || req.body[update] === true;
             } else if (update === 'startDate' || update === 'endDate') {
                 campaign[update] = new Date(req.body[update]);
@@ -138,6 +176,30 @@ exports.updateCampaign = async (req, res) => {
         }
 
         await campaign.save();
+
+        // Handle "Fırsatlar" product sync
+        // Delete old product first
+        await Product.deleteOne({ campaignId: campaign._id });
+
+        // If reflectToMenu is true, create new product
+        if (campaign.reflectToMenu && campaign.menuItems && campaign.menuItems.length > 0) {
+            const totalPrice = campaign.menuItems.reduce((sum, item) => sum + (item.price || 0), 0);
+            const productName = campaign.bundleName || campaign.menuItems.map(i => i.productName).join(' + ');
+
+            await Product.create({
+                business: campaign.businessId,
+                name: productName,
+                description: campaign.shortDescription,
+                price: totalPrice,
+                discount: campaign.discountAmount || 0,
+                category: 'Fırsatlar',
+                isPopular: false,
+                isAvailable: true,
+                campaignId: campaign._id,
+                imageUrl: campaign.headerImage
+            });
+            console.log('🎁 Fırsatlar menu item updated for campaign:', campaign.title);
+        }
 
         console.log('✅ Campaign updated:', campaign.title);
         res.json({
@@ -165,6 +227,9 @@ exports.deleteCampaign = async (req, res) => {
         if (!campaign) {
             return res.status(404).json({ error: 'Campaign not found' });
         }
+
+        // Delete linked "Fırsatlar" product if it exists
+        await Product.deleteOne({ campaignId: campaign._id });
 
         // Delete the campaign itself
         await Campaign.findByIdAndDelete(id);

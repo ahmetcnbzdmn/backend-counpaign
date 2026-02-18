@@ -26,7 +26,7 @@ const productSchema = new mongoose.Schema({
     },
     category: {
         type: String,
-        enum: ['Sıcak Kahveler', 'Soğuk Kahveler', 'Sıcak İçecekler', 'Soğuk İçecekler', 'Tatlılar'],
+        enum: ['Sıcak Kahveler', 'Soğuk Kahveler', 'Sıcak İçecekler', 'Soğuk İçecekler', 'Tatlılar', 'Fırsatlar'],
         default: 'Sıcak Kahveler',
         required: true
     },
@@ -42,6 +42,11 @@ const productSchema = new mongoose.Schema({
     isAvailable: {
         type: Boolean,
         default: true
+    },
+    campaignId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Campaign',
+        default: null
     },
     createdAt: {
         type: Date,
