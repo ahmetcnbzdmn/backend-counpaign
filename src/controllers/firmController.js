@@ -543,7 +543,6 @@ exports.getPointsDetails = async (req, res) => {
         if (!businessId) return res.status(400).json({ error: 'Business ID required' });
 
         const Transaction = require('../models/Transaction');
-        const Campaign = require('../models/Campaign');
 
         // Get transactions where type is POINT (pure point campaigns)
         const transactions = await Transaction.find({
@@ -555,35 +554,15 @@ exports.getPointsDetails = async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(500);
 
-        // Get all campaigns for this business to check status
-        const campaigns = await Campaign.find({ businessId });
-        const campaignMap = {};
-        campaigns.forEach(c => {
-            campaignMap[c.title] = {
-                exists: true,
-                active: c.endDate >= new Date()
-            };
-        });
-
         const result = transactions.map(tx => {
-            const campaignName = tx.description || 'Puan Kampanyası';
-            // Extract campaign title from description (format: "Kampanya: Title")
-            const titleMatch = campaignName.match(/Kampanya:\s*(.+)/);
-            const title = titleMatch ? titleMatch[1] : campaignName;
-            const campaignInfo = campaignMap[title];
-
-            let status = 'Silinmiş';
-            if (campaignInfo) {
-                status = campaignInfo.active ? 'Aktif' : 'Sona Ermiş';
-            }
-
             return {
                 _id: tx._id,
                 customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
                 customerPhone: tx.customer?.phoneNumber || '-',
                 points: tx.pointsEarned || tx.value || 0,
-                campaign: campaignName,
-                status,
+                purchaseAmount: tx.purchaseAmount || 0,
+                campaign: tx.description || 'Puan Kazanımı',
+                status: 'Aktif',
                 date: tx.createdAt
             };
         });
@@ -602,7 +581,6 @@ exports.getStampsDetails = async (req, res) => {
         if (!businessId) return res.status(400).json({ error: 'Business ID required' });
 
         const Transaction = require('../models/Transaction');
-        const Campaign = require('../models/Campaign');
 
         // Get transactions where stamps were earned (stamp campaigns)
         const transactions = await Transaction.find({
@@ -614,34 +592,16 @@ exports.getStampsDetails = async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(500);
 
-        // Get all campaigns for this business to check status
-        const campaigns = await Campaign.find({ businessId });
-        const campaignMap = {};
-        campaigns.forEach(c => {
-            campaignMap[c.title] = {
-                exists: true,
-                active: c.endDate >= new Date()
-            };
-        });
-
         const result = transactions.map(tx => {
-            const campaignName = tx.description || 'Pul Kampanyası';
-            const titleMatch = campaignName.match(/Kampanya:\s*(.+)/);
-            const title = titleMatch ? titleMatch[1] : campaignName;
-            const campaignInfo = campaignMap[title];
-
-            let status = 'Silinmiş';
-            if (campaignInfo) {
-                status = campaignInfo.active ? 'Aktif' : 'Sona Ermiş';
-            }
-
             return {
                 _id: tx._id,
                 customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
                 customerPhone: tx.customer?.phoneNumber || '-',
                 stamps: tx.stampsEarned,
-                campaign: campaignName,
-                status,
+                points: tx.pointsEarned || 0,
+                purchaseAmount: tx.purchaseAmount || 0,
+                campaign: tx.description || 'Pul Kazanımı',
+                status: 'Aktif',
                 date: tx.createdAt
             };
         });
@@ -691,7 +651,6 @@ exports.getGiftsDetails = async (req, res) => {
 exports.getAdminPointsDetails = async (req, res) => {
     try {
         const Transaction = require('../models/Transaction');
-        const Campaign = require('../models/Campaign');
 
         const transactions = await Transaction.find({
             type: 'POINT',
@@ -702,25 +661,11 @@ exports.getAdminPointsDetails = async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(1000);
 
-        // Get all campaigns for status lookup
-        const campaigns = await Campaign.find();
-        const campaignMap = {};
-        campaigns.forEach(c => {
-            campaignMap[c.title] = {
-                exists: true,
-                active: c.endDate >= new Date()
-            };
-        });
-
         const result = transactions.map(tx => {
-            const campaignName = tx.description || 'Puan Kampanyası';
-            const titleMatch = campaignName.match(/Kampanya:\s*(.+)/);
-            const title = titleMatch ? titleMatch[1] : campaignName;
-            const campaignInfo = campaignMap[title];
-
-            let status = 'Silinmiş';
-            if (campaignInfo) {
-                status = campaignInfo.active ? 'Aktif' : 'Sona Ermiş';
+            // Status based on business existence
+            let status = 'Aktif';
+            if (!tx.business) {
+                status = 'Firma Silinmiş';
             }
 
             return {
@@ -729,7 +674,8 @@ exports.getAdminPointsDetails = async (req, res) => {
                 customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
                 customerPhone: tx.customer?.phoneNumber || '-',
                 points: tx.pointsEarned || tx.value || 0,
-                campaign: campaignName,
+                purchaseAmount: tx.purchaseAmount || 0,
+                campaign: tx.description || 'Puan Kazanımı',
                 status,
                 date: tx.createdAt
             };
@@ -746,7 +692,6 @@ exports.getAdminPointsDetails = async (req, res) => {
 exports.getAdminStampsDetails = async (req, res) => {
     try {
         const Transaction = require('../models/Transaction');
-        const Campaign = require('../models/Campaign');
 
         const transactions = await Transaction.find({
             type: 'STAMP',
@@ -757,25 +702,11 @@ exports.getAdminStampsDetails = async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(1000);
 
-        // Get all campaigns for status lookup
-        const campaigns = await Campaign.find({});
-        const campaignMap = {};
-        campaigns.forEach(c => {
-            campaignMap[c.title] = {
-                exists: true,
-                active: c.endDate >= new Date()
-            };
-        });
-
         const result = transactions.map(tx => {
-            const campaignName = tx.description || 'Pul Kampanyası';
-            const titleMatch = campaignName.match(/Kampanya:\s*(.+)/);
-            const title = titleMatch ? titleMatch[1] : campaignName;
-            const campaignInfo = campaignMap[title];
-
-            let status = 'Silinmiş';
-            if (campaignInfo) {
-                status = campaignInfo.active ? 'Aktif' : 'Sona Ermiş';
+            // Status based on business existence
+            let status = 'Aktif';
+            if (!tx.business) {
+                status = 'Firma Silinmiş';
             }
 
             return {
@@ -784,7 +715,9 @@ exports.getAdminStampsDetails = async (req, res) => {
                 customerName: tx.customer ? `${tx.customer.name} ${tx.customer.surname}` : 'Bilinmeyen',
                 customerPhone: tx.customer?.phoneNumber || '-',
                 stamps: tx.stampsEarned,
-                campaign: campaignName,
+                points: tx.pointsEarned || 0,
+                purchaseAmount: tx.purchaseAmount || 0,
+                campaign: tx.description || 'Pul Kazanımı',
                 status,
                 date: tx.createdAt
             };
