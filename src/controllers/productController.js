@@ -90,11 +90,38 @@ exports.deleteProduct = async (req, res) => {
     try {
         const { id } = req.params;
         const businessId = req.user.id;
+        const { force } = req.query; // Check for force parameter
 
-        const product = await Product.findOneAndDelete({ _id: id, business: businessId });
+        const product = await Product.findOne({ _id: id, business: businessId });
         if (!product) {
             return res.status(404).json({ error: 'Product not found' });
         }
+
+        // Check if product is used in any active or future campaign
+        const Campaign = require('../models/Campaign');
+        const activeCampaigns = await Campaign.find({
+            businessId: businessId,
+            'menuItems.productId': id
+        });
+
+        if (activeCampaigns.length > 0 && force !== 'true') {
+            return res.status(409).json({
+                error: 'Conflict',
+                message: 'Bu ürün aktif kampanyalarda kullanılıyor. Silerseniz kampanyalar da silinecektir.',
+                campaigns: activeCampaigns.map(c => c.title)
+            });
+        }
+
+        // If force is true, delete the campaigns first
+        if (activeCampaigns.length > 0 && force === 'true') {
+            await Campaign.deleteMany({
+                businessId: businessId,
+                'menuItems.productId': id
+            });
+        }
+
+        // Delete the product
+        await Product.deleteOne({ _id: id });
 
         // Delete image
         if (product.imageUrl) {
