@@ -92,8 +92,11 @@ exports.deleteProduct = async (req, res) => {
         const businessId = req.user.id;
         const { force } = req.query; // Check for force parameter
 
+        console.log(`[DELETE PRODUCT] Request for ${id} (Force: ${force})`);
+
         const product = await Product.findOne({ _id: id, business: businessId });
         if (!product) {
+            console.log(`[DELETE PRODUCT] Product not found or unauthorized: ${id}`);
             return res.status(404).json({ error: 'Product not found' });
         }
 
@@ -103,6 +106,8 @@ exports.deleteProduct = async (req, res) => {
             businessId: businessId,
             'menuItems.productId': id
         });
+
+        console.log(`[DELETE PRODUCT] Active campaigns found: ${activeCampaigns.length}`);
 
         if (activeCampaigns.length > 0 && force !== 'true') {
             return res.status(409).json({
@@ -114,25 +119,41 @@ exports.deleteProduct = async (req, res) => {
 
         // If force is true, delete the campaigns first
         if (activeCampaigns.length > 0 && force === 'true') {
-            await Campaign.deleteMany({
+            console.log(`[DELETE PRODUCT] Deleting ${activeCampaigns.length} campaigns via Cascade...`);
+
+            // Collect campaign IDs to release other products
+            const campaignIds = activeCampaigns.map(c => c._id);
+
+            // Delete ALL products linked to these campaigns (e.g. "Fırsatlar" bundle products)
+            // This prevents "zombie" products that are locked in the UI
+            const productDeleteResult = await Product.deleteMany({ campaignId: { $in: campaignIds } });
+            console.log(`[DELETE PRODUCT] Cascade deleted ${productDeleteResult.deletedCount} campaign bundle products.`);
+
+            const deleteResult = await Campaign.deleteMany({
                 businessId: businessId,
                 'menuItems.productId': id
             });
+            console.log(`[DELETE PRODUCT] Campaigns deleted: ${deleteResult.deletedCount}`);
         }
 
         // Delete the product
-        await Product.deleteOne({ _id: id });
+        console.log(`[DELETE PRODUCT] Deleting product ${id}...`);
+        const prodDeleteResult = await Product.deleteOne({ _id: id, business: businessId });
+        console.log(`[DELETE PRODUCT] Product deleted result:`, prodDeleteResult);
 
         // Delete image
         if (product.imageUrl) {
             const imagePath = path.join(__dirname, '../../', product.imageUrl);
             if (fs.existsSync(imagePath)) {
-                fs.unlink(imagePath, () => { });
+                fs.unlink(imagePath, (err) => {
+                    if (err) console.error('[DELETE PRODUCT] Image unlink error:', err);
+                });
             }
         }
 
-        res.json({ message: 'Product deleted successfully' });
+        res.json({ message: 'Product deleted successfully', deletedId: id });
     } catch (error) {
+        console.error('[DELETE PRODUCT] Error:', error);
         res.status(500).json({ error: error.message });
     }
 };
