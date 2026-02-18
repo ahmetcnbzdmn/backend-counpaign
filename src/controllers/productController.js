@@ -151,7 +151,11 @@ exports.deleteProduct = async (req, res) => {
             }
         }
 
-        res.json({ message: 'Product deleted successfully', deletedId: id });
+        res.json({
+            message: 'Product deleted successfully',
+            deletedId: id,
+            deletedCampaignIds: activeCampaigns.map(c => c._id)
+        });
     } catch (error) {
         console.error('[DELETE PRODUCT] Error:', error);
         res.status(500).json({ error: error.message });
