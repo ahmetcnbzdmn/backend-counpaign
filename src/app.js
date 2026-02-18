@@ -55,7 +55,6 @@ app.use('/api/customer', require('./routes/customer.routes'));
 app.use('/api/wallet', require('./routes/wallet.routes'));
 app.use('/api/transactions', require('./routes/transaction.routes'));
 app.use('/api/campaigns', require('./routes/campaign.routes'));
-app.use('/api/participations', require('./routes/participation.routes'));
 app.use('/api/upload', require('./routes/upload.routes'));
 app.use('/api/gifts', require('./routes/gift.routes')); // Gift system
 app.use('/api/reviews', require('./routes/review.routes'));

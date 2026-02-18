@@ -1,5 +1,4 @@
 const QRToken = require('../models/QRToken');
-const Participation = require('../models/Participation');
 const CustomerBusiness = require('../models/CustomerBusiness');
 const crypto = require('crypto');
 
@@ -33,7 +32,7 @@ exports.generateQR = async (req, res) => {
     }
 };
 
-// Validate QR token and return customer participations
+// Validate QR token (customer scans static/dynamic QR)
 exports.validateQR = async (req, res) => {
     try {
         const { token } = req.body;
@@ -136,7 +135,7 @@ exports.validateQR = async (req, res) => {
                 });
             }
 
-            // Normal campaign scan flow
+            // Normal scan flow
             const tempQR = new QRToken({
                 token: tempToken,
                 business: business._id,
@@ -146,49 +145,25 @@ exports.validateQR = async (req, res) => {
             });
             await tempQR.save();
 
-            // Return the temp token so the mobile app polls with it
-            const Campaign = require('../models/Campaign');
-            const campaigns = await Campaign.find({ businessId: business._id });
-            const campaignIds = campaigns.map(c => c._id);
-
-            const participations = await Participation.find({
-                customer: customerId,
-                campaign: { $in: campaignIds },
-                business: business._id
-            }).populate('campaign');
-
-            console.log(`✅ Static QR scanned - Customer ${customerId} has ${participations.length} participations for ${business.companyName}`);
+            console.log(`✅ Static QR scanned - Customer ${customerId} at ${business.companyName}`);
 
             return res.json({
                 business: {
                     id: business._id,
                     name: business.companyName
                 },
-                participations,
                 qrTokenId: tempQR._id,
-                pollToken: tempToken  // Mobile app should use this for polling
+                pollToken: tempToken
             });
         }
 
-        // Get customer's participations for this business's campaigns (legacy flow)
-        const Campaign = require('../models/Campaign');
-        const campaigns = await Campaign.find({ businessId: business._id });
-        const campaignIds = campaigns.map(c => c._id);
-
-        const participations = await Participation.find({
-            customer: customerId,
-            campaign: { $in: campaignIds },
-            business: business._id
-        }).populate('campaign');
-
-        console.log(`✅ QR scanned - Customer ${customerId} has ${participations.length} participations`);
+        console.log(`✅ QR scanned - Customer ${customerId} at ${business.companyName}`);
 
         res.json({
             business: {
                 id: business._id,
                 name: business.companyName
             },
-            participations,
             qrTokenId: qrToken._id
         });
     } catch (error) {
@@ -197,10 +172,10 @@ exports.validateQR = async (req, res) => {
     }
 };
 
-// Confirm participation and update CustomerBusiness
+// Confirm stamp/point entry (admin enters stamp count + purchase amount)
 exports.confirmParticipation = async (req, res) => {
     try {
-        const { qrTokenId, customerId, campaignId } = req.body;
+        const { qrTokenId, customerId, stampCount, purchaseAmount } = req.body;
         const businessId = req.user?.id;
 
         // Verify QR token
@@ -209,17 +184,18 @@ exports.confirmParticipation = async (req, res) => {
             return res.status(400).json({ error: 'Invalid or expired QR token' });
         }
 
-        // Get campaign details
-        const Campaign = require('../models/Campaign');
-        const campaign = await Campaign.findById(campaignId);
-        if (!campaign) {
-            return res.status(404).json({ error: 'Campaign not found' });
-        }
-
         // Mark token as used
         qrToken.status = 'used';
 
-        // ... (Transaction creation below)
+        // Get business settings for points percentage
+        const Business = require('../models/Business');
+        const business = await Business.findById(businessId);
+        const pointsPercentage = business?.settings?.pointsPercentage || 10;
+
+        // Calculate points from purchase amount (default 10%)
+        const stampsToAdd = parseInt(stampCount) || 0;
+        const purchase = parseFloat(purchaseAmount) || 0;
+        const pointsToAdd = Math.floor(purchase * (pointsPercentage / 100));
 
         // Find or create CustomerBusiness record
         let customerBusiness = await CustomerBusiness.findOne({
@@ -228,7 +204,6 @@ exports.confirmParticipation = async (req, res) => {
         });
 
         if (!customerBusiness) {
-            // Create new relationship if doesn't exist
             customerBusiness = new CustomerBusiness({
                 customer: customerId,
                 business: businessId,
@@ -238,9 +213,9 @@ exports.confirmParticipation = async (req, res) => {
             });
         }
 
-        // Apply reward based on campaign
-        if (campaign.rewardType === 'stamp') {
-            customerBusiness.stamps += (campaign.rewardValue || 1);
+        // Add stamps
+        if (stampsToAdd > 0) {
+            customerBusiness.stamps += stampsToAdd;
 
             // Auto-handle stamp completion for gifts
             const stampsTarget = customerBusiness.stampsTarget || 6;
@@ -249,28 +224,29 @@ exports.confirmParticipation = async (req, res) => {
                 customerBusiness.giftsCount += completedGifts;
                 customerBusiness.stamps = customerBusiness.stamps % stampsTarget;
             }
-        } else if (campaign.rewardType === 'points') {
-            customerBusiness.points += (campaign.rewardValue || 0);
+        }
+
+        // Add points from purchase
+        if (pointsToAdd > 0) {
+            customerBusiness.points += pointsToAdd;
         }
 
         customerBusiness.totalVisits = (customerBusiness.totalVisits || 0) + 1;
         await customerBusiness.save();
 
-        // [NEW] Create Transaction Record for Order History
+        // Create Transaction Record
         const Transaction = require('../models/Transaction');
-
-        const isStamp = campaign.rewardType === 'stamp';
-        const rewardVal = campaign.rewardValue || (isStamp ? 1 : 0);
 
         const transaction = await Transaction.create({
             customer: customerId,
             business: businessId,
-            type: isStamp ? 'STAMP' : 'POINT',
+            type: stampsToAdd > 0 ? 'STAMP' : 'POINT',
             category: 'KAZANIM',
-            value: rewardVal,
-            pointsEarned: isStamp ? 0 : rewardVal,
-            stampsEarned: isStamp ? rewardVal : 0,
-            description: `Kampanya: ${campaign.title}`,
+            value: stampsToAdd > 0 ? stampsToAdd : pointsToAdd,
+            pointsEarned: pointsToAdd,
+            stampsEarned: stampsToAdd,
+            purchaseAmount: purchase,
+            description: `Damga: ${stampsToAdd}, Puan: ${pointsToAdd} (${purchase} TL alışveriş)`,
             status: 'COMPLETED'
         });
 
@@ -278,20 +254,21 @@ exports.confirmParticipation = async (req, res) => {
         qrToken.transaction = transaction._id;
         await qrToken.save();
 
-        console.log(`✅ Participation confirmed for ${campaign.title} - Type: ${campaign.rewardType}, Value: ${campaign.rewardValue}`);
+        console.log(`✅ Confirmed - Stamps: +${stampsToAdd}, Points: +${pointsToAdd} (${purchase} TL, ${pointsPercentage}%)`);
 
         res.json({
-            message: 'Participation confirmed successfully',
+            message: 'Stamp/point entry confirmed successfully',
             transactionId: transaction._id,
             customerBusiness: {
                 stamps: customerBusiness.stamps,
+                stampsTarget: customerBusiness.stampsTarget || 6,
                 giftsCount: customerBusiness.giftsCount,
                 points: customerBusiness.points,
                 totalVisits: customerBusiness.totalVisits
             }
         });
     } catch (error) {
-        console.error('Confirm participation error:', error);
+        console.error('Confirm entry error:', error);
         res.status(500).json({ error: error.message });
     }
 };
@@ -316,23 +293,22 @@ exports.checkStatus = async (req, res) => {
         if (qrToken.status === 'scanned') {
             console.log(`✨ Token SCANNED by: ${qrToken.scannedBy?.name} ${qrToken.scannedBy?.surname}`);
 
-            // Get participations for this customer
-            const Campaign = require('../models/Campaign');
-            const campaigns = await Campaign.find({ businessId });
-            const campaignIds = campaigns.map(c => c._id);
-            console.log(`📅 Found ${campaigns.length} active campaigns for this business`);
-
-            const participations = await Participation.find({
+            // Get customer loyalty data
+            const customerBusiness = await CustomerBusiness.findOne({
                 customer: qrToken.scannedBy._id,
-                campaign: { $in: campaignIds }
-            }).populate('campaign');
-
-            console.log(`🎟️ Found ${participations.length} matching participations for user`);
+                business: businessId
+            });
 
             return res.json({
                 status: 'scanned',
                 customer: qrToken.scannedBy,
-                participations,
+                customerBusiness: customerBusiness ? {
+                    stamps: customerBusiness.stamps,
+                    stampsTarget: customerBusiness.stampsTarget || 6,
+                    giftsCount: customerBusiness.giftsCount,
+                    points: customerBusiness.points,
+                    totalVisits: customerBusiness.totalVisits
+                } : { stamps: 0, stampsTarget: 6, giftsCount: 0, points: 0, totalVisits: 0 },
                 qrTokenId: qrToken._id.toString()
             });
         }
@@ -384,23 +360,25 @@ exports.pollStaticQR = async (req, res) => {
             });
         }
 
-        // Normal campaign scan — get participations
-        const Campaign = require('../models/Campaign');
-        const campaigns = await Campaign.find({ businessId });
-        const campaignIds = campaigns.map(c => c._id);
-
-        const participations = await Participation.find({
+        // Normal scan — get customer loyalty data
+        const customerBusiness = await CustomerBusiness.findOne({
             customer: qrToken.scannedBy._id,
-            campaign: { $in: campaignIds }
-        }).populate('campaign');
+            business: businessId
+        });
 
         console.log(`📱 Static QR poll - Found scan by: ${qrToken.scannedBy.name} ${qrToken.scannedBy.surname}`);
 
         return res.json({
             status: 'scanned',
-            scanType: 'campaign',
+            scanType: 'business_scan',
             customer: qrToken.scannedBy,
-            participations,
+            customerBusiness: customerBusiness ? {
+                stamps: customerBusiness.stamps,
+                stampsTarget: customerBusiness.stampsTarget || 6,
+                giftsCount: customerBusiness.giftsCount,
+                points: customerBusiness.points,
+                totalVisits: customerBusiness.totalVisits
+            } : { stamps: 0, stampsTarget: 6, giftsCount: 0, points: 0, totalVisits: 0 },
             qrTokenId: qrToken._id.toString()
         });
     } catch (error) {

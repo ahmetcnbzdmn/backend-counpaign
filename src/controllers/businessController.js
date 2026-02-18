@@ -45,14 +45,7 @@ exports.removeBusinessFromWallet = async (req, res) => {
             business: businessId
         });
 
-        // 4.1 Delete Participations (Reset campaign progress)
-        // User requesting to delete this so they can "re-join" when adding firm back.
-        await require('../models/Participation').deleteMany({
-            customer: customerId,
-            business: businessId
-        });
-
-        // 4.2 Delete Reviews
+        // 4.1 Delete Reviews
         await require('../models/Review').deleteMany({
             customer: customerId,
             business: businessId

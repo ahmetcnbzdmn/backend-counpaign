@@ -166,20 +166,12 @@ exports.deleteCampaign = async (req, res) => {
             return res.status(404).json({ error: 'Campaign not found' });
         }
 
-        // Delete all participations associated with this campaign (CASCADE DELETE)
-        const Participation = require('../models/Participation');
-        const deletedParticipations = await Participation.deleteMany({ campaign: id });
-        console.log(`🗑️ Deleted ${deletedParticipations.deletedCount} participations for campaign: ${campaign.title}`);
-
         // Delete the campaign itself
         await Campaign.findByIdAndDelete(id);
 
         console.log('✅ Campaign deleted:', campaign.title);
         res.json({
-            message: 'Campaign and participations deleted successfully',
-            details: {
-                participations: deletedParticipations.deletedCount
-            }
+            message: 'Campaign deleted successfully'
         });
     } catch (err) {
         console.error('Delete campaign error:', err);
