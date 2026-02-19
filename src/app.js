@@ -19,6 +19,8 @@ app.use(helmet({
 const corsOptions = IS_PROD ? {
     origin: [
         'https://counpaign-admin.vercel.app',  // Admin panel
+        'https://counpaign.com',                // Main domain
+        'https://www.counpaign.com',            // Main domain (www)
         process.env.ADMIN_PANEL_URL,            // Custom admin URL
         process.env.MOBILE_APP_URL,             // Mobile app URL
     ].filter(Boolean),
