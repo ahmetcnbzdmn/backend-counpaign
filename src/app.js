@@ -3,15 +3,28 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const fs = require('fs');
+const path = require('path');
+const mongoose = require('mongoose');
+const logger = require('./utils/logger');
 
 const app = express();
+const IS_PROD = process.env.NODE_ENV === 'production';
 
-// Security Middleware - Configure helmet to allow CORS for uploads
+// ===== Security Middleware =====
 app.use(helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
-app.use(cors());
-const path = require('path');
+
+// CORS: whitelist in production, open in development
+const corsOptions = IS_PROD ? {
+    origin: [
+        'https://counpaign-admin.vercel.app',  // Admin panel
+        process.env.ADMIN_PANEL_URL,            // Custom admin URL
+        process.env.MOBILE_APP_URL,             // Mobile app URL
+    ].filter(Boolean),
+    credentials: true,
+} : {};
+app.use(cors(corsOptions));
 
 // Ensure uploads directory exists at startup
 const uploadsDir = path.join(__dirname, '../uploads');
@@ -19,34 +32,81 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 app.use('/uploads', express.static(uploadsDir));
 
-// Request Logger
+// ===== Structured Request Logger =====
 app.use((req, res, next) => {
-    console.log(`\n[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-    if (req.headers.authorization) {
-        console.log('   Auth: Bearer token present');
-    }
-    if (req.body && Object.keys(req.body).length > 0) {
-        console.log('   Body:', JSON.stringify(req.body).substring(0, 100));
-    }
+    const start = Date.now();
+
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        const meta = {
+            method: req.method,
+            url: req.originalUrl,
+            status: res.statusCode,
+            duration: `${duration}ms`,
+            ip: req.ip,
+        };
+
+        // Don't log body in production (security)
+        if (!IS_PROD && req.body && Object.keys(req.body).length > 0) {
+            meta.body = JSON.stringify(req.body).substring(0, 100);
+        }
+
+        if (res.statusCode >= 400) {
+            logger.warn('Request failed', meta);
+        } else {
+            logger.info('Request handled', meta);
+        }
+    });
+
     next();
 });
 
-// Rate Limiting
+// ===== Rate Limiting =====
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5000, // Increased limit for development
+    windowMs: 15 * 60 * 1000,
+    max: IS_PROD ? 200 : 5000,  // Strict in production
     standardHeaders: true,
     legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later.' },
 });
 app.use(limiter);
 
-// Body Parsers
+// ===== Body Parsers =====
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Basic Health Check
+// ===== Health Check Endpoint =====
 app.get('/', (req, res) => {
     res.json({ message: 'Counpaign API is running 🚀', timestamp: new Date() });
+});
+
+app.get('/api/health', async (req, res) => {
+    const uptime = process.uptime();
+    const memUsage = process.memoryUsage();
+
+    let dbStatus = 'disconnected';
+    try {
+        if (mongoose.connection.readyState === 1) {
+            await mongoose.connection.db.admin().ping();
+            dbStatus = 'connected';
+        }
+    } catch (err) {
+        dbStatus = 'error: ' + err.message;
+    }
+
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        uptime: `${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m ${Math.floor(uptime % 60)}s`,
+        environment: process.env.NODE_ENV || 'development',
+        node: process.version,
+        database: dbStatus,
+        memory: {
+            rss: `${Math.round(memUsage.rss / 1024 / 1024)}MB`,
+            heapUsed: `${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
+            heapTotal: `${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`,
+        },
+    });
 });
 
 // Routes

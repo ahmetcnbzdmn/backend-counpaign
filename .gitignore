@@ -5,3 +5,6 @@ node_modules/
 uploads/
 *.log
 serviceAccountKey.json
+logs/
+backups/
+docker-compose.override.yml
