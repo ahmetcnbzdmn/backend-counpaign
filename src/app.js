@@ -19,6 +19,7 @@ app.use(helmet({
 const corsOptions = IS_PROD ? {
     origin: [
         'https://counpaign-admin.vercel.app',  // Admin panel
+        'https://admin.counpaign.com',         // Admin panel (custom domain)
         'https://counpaign.com',                // Main domain
         'https://www.counpaign.com',            // Main domain (www)
         process.env.ADMIN_PANEL_URL,            // Custom admin URL
