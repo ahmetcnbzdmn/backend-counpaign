@@ -20,7 +20,7 @@ mongoose.connect(MONGO_URI)
     server.listen(PORT, '0.0.0.0', () => { // Listen on SERVER, not APP
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`Accessible at http://0.0.0.0:${PORT}`);
-      console.log("!!! DEBUG MODE ACTIVE - IF YOU DO NOT SEE THIS, RESTART SERVER !!!");
+      console.log(`Environment: ${process.env.NODE_ENV}`);
     });
   })
   .catch((err) => {
