@@ -1,6 +1,7 @@
 const QRToken = require('../models/QRToken');
 const CustomerBusiness = require('../models/CustomerBusiness');
 const AuditLog = require('../models/AuditLog');
+const Transaction = require('../models/Transaction');
 const crypto = require('crypto');
 
 // Generate QR token for business
