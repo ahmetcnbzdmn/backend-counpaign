@@ -15,6 +15,34 @@ app.use(helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
+// Firebase App Check Middleware (Preparation)
+// Requires Firebase Admin SDK to be initialized with service account
+// const admin = require('firebase-admin');
+const verifyAppCheck = async (req, res, next) => {
+    // If not in production, bypass or if bypass token is provided (for testing docs)
+    if (!IS_PROD) return next();
+
+    const appCheckToken = req.header('X-Firebase-AppCheck');
+
+    if (!appCheckToken) {
+        // Temporarily disabled until Firebase is fully configured on client side
+        // return res.status(401).json({ error: 'App Check token required.' });
+        console.log('⚠️ [DEV_WARNING] App Check token missing. Request allowed for now.');
+        return next();
+    }
+
+    try {
+        // await admin.appCheck().verifyToken(appCheckToken);
+        // console.log('✅ Firebase App Check Verified');
+        next();
+    } catch (err) {
+        console.error('AppCheck Error:', err);
+        return res.status(401).json({ error: 'Invalid App Check token.' });
+    }
+};
+
+// app.use(verifyAppCheck); // Uncomment after Firebase Admin is configured
+
 // CORS: whitelist in production, open in development
 const corsOptions = IS_PROD ? {
     origin: [
@@ -65,6 +93,7 @@ app.use((req, res, next) => {
 });
 
 // ===== Rate Limiting =====
+// Global rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: IS_PROD ? 200 : 5000,  // Strict in production
@@ -73,6 +102,27 @@ const limiter = rateLimit({
     message: { error: 'Too many requests, please try again later.' },
 });
 app.use(limiter);
+
+// Auth specific rate limiting (Brute-force protection)
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: IS_PROD ? 5 : 50, // Limit each IP to 5 login requests per windowMs in production
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Çok fazla giriş denemesi yaptınız. Lütfen 15 dakika sonra tekrar deneyin.' },
+});
+
+const registerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: IS_PROD ? 5 : 50, // Limit each IP to 5 register requests per hour in production
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Çok fazla kayıt denemesi yaptınız. Lütfen daha sonra tekrar deneyin.' },
+});
+
+// Export limiters to use in routes
+app.locals.loginLimiter = loginLimiter;
+app.locals.registerLimiter = registerLimiter;
 
 // ===== Body Parsers =====
 app.use(express.json({ limit: '50mb' }));

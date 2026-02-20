@@ -1,13 +1,39 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const Customer = require('../models/Customer');
 const Admin = require('../models/Admin');
+const RefreshToken = require('../models/RefreshToken');
 // Keeping Business/Terminal imports if needed later, but unified flow uses Customer as User base
 // const Business = require('../models/Business'); 
 // const Terminal = require('../models/Terminal');
 
-const generateToken = (id, role = 'customer') => {
-    return jwt.sign({ id, role }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
+const generateAccessToken = (id, role = 'customer') => {
+    // Access token is valid for 15 minutes
+    return jwt.sign({ id, role }, process.env.JWT_SECRET || 'secret', { expiresIn: '15m' });
 };
+
+const generateRefreshToken = async (userId, userModel, ipAddress) => {
+    // Generate a random string for the refresh token
+    const token = crypto.randomBytes(40).toString('hex');
+
+    // Set expiration to 14 days
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 14);
+
+    const refreshToken = new RefreshToken({
+        token,
+        user: userId,
+        userModel,
+        expiresAt,
+        createdByIp: ipAddress
+    });
+
+    await refreshToken.save();
+    return token;
+};
+
+exports.generateAccessToken = generateAccessToken;
+exports.generateRefreshToken = generateRefreshToken;
 
 // --- UNIFIED AUTH ---
 
@@ -75,9 +101,12 @@ exports.register = async (req, res) => {
             console.error("⚠️ QR Token creation failed (non-blocking):", qrError);
         }
 
-        const token = generateToken(user._id);
+        const accessToken = generateAccessToken(user._id);
+        const refreshToken = await generateRefreshToken(user._id, 'Customer', req.ip);
+
         res.status(201).json({
-            token,
+            token: accessToken, // renamed conceptually, keeps old API shape partly but adds refresh
+            refreshToken,
             user: {
                 id: user._id,
                 name,
@@ -110,9 +139,12 @@ exports.login = async (req, res) => {
             return res.status(400).json({ error: 'Şifre hatalı.' });
         }
 
-        const token = generateToken(user._id);
+        const accessToken = generateAccessToken(user._id);
+        const refreshToken = await generateRefreshToken(user._id, 'Customer', req.ip);
+
         res.json({
-            token,
+            token: accessToken,
+            refreshToken,
             user: {
                 id: user._id,
                 name: user.name,
@@ -144,9 +176,12 @@ exports.adminLogin = async (req, res) => {
                 return res.status(400).json({ error: 'Kullanıcı adı veya şifre hatalı.' });
             }
 
-            const token = generateToken(admin._id, admin.role);
+            const accessToken = generateAccessToken(admin._id, admin.role);
+            const refreshToken = await generateRefreshToken(admin._id, 'Admin', req.ip);
+
             res.json({
-                token,
+                token: accessToken,
+                refreshToken,
                 user: {
                     id: admin._id,
                     username: admin.username,
@@ -173,9 +208,12 @@ exports.adminLogin = async (req, res) => {
             return res.status(400).json({ error: 'Kullanıcı adı veya şifre hatalı.' });
         }
 
-        const token = generateToken(business._id, 'business');
+        const accessToken = generateAccessToken(business._id, 'business');
+        const refreshToken = await generateRefreshToken(business._id, 'Business', req.ip);
+
         res.json({
-            token,
+            token: accessToken,
+            refreshToken,
             user: {
                 id: business._id,
                 username: business.email,
@@ -189,6 +227,66 @@ exports.adminLogin = async (req, res) => {
     } catch (err) {
         console.error("Admin Login Error:", err);
         res.status(500).json({ error: err.message });
+    }
+};
+
+// --- REFRESH TOKEN ---
+exports.refreshToken = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            return res.status(401).json({ error: 'Refresh token gerekli.' });
+        }
+
+        const storedToken = await RefreshToken.findOne({ token: refreshToken });
+
+        if (!storedToken) {
+            return res.status(401).json({ error: 'Geçersiz refresh token.' });
+        }
+
+        if (!storedToken.isActive) {
+            return res.status(401).json({ error: 'Bu refresh token süresi dolmuş veya iptal edilmiş.' });
+        }
+
+        // Generate new Access Token based on user model
+        let role = 'customer';
+        if (storedToken.userModel === 'Admin') {
+            const admin = await Admin.findById(storedToken.user);
+            if (admin) role = admin.role;
+        } else if (storedToken.userModel === 'Business') {
+            role = 'business';
+        }
+
+        const newAccessToken = generateAccessToken(storedToken.user, role);
+
+        res.json({
+            token: newAccessToken
+        });
+
+    } catch (err) {
+        console.error("Refresh Token Error:", err);
+        res.status(500).json({ error: 'Sunucu hatası.' });
+    }
+};
+
+// --- LOGOUT ---
+exports.logout = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+
+        if (refreshToken) {
+            // Invalidate the refresh token
+            await RefreshToken.findOneAndUpdate(
+                { token: refreshToken },
+                { revoked: new Date() }
+            );
+        }
+
+        res.json({ message: 'Başarıyla çıkış yapıldı.' });
+    } catch (err) {
+        console.error("Logout Error:", err);
+        res.status(500).json({ error: 'Sunucu hatası.' });
     }
 };
 

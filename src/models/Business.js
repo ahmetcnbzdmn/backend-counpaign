@@ -55,6 +55,19 @@ const businessSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    // Geo-Fencing Coordinates
+    latitude: {
+        type: Number,
+        default: null
+    },
+    longitude: {
+        type: Number,
+        default: null
+    },
+    allowedScanRadius: {
+        type: Number,
+        default: 100 // allowed scan radius in meters
+    },
     // Permanent QR Code Token for this business
     staticQR: {
         type: String,

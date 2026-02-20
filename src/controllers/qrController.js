@@ -1,5 +1,6 @@
 const QRToken = require('../models/QRToken');
 const CustomerBusiness = require('../models/CustomerBusiness');
+const AuditLog = require('../models/AuditLog');
 const crypto = require('crypto');
 
 // Generate QR token for business
@@ -32,10 +33,29 @@ exports.generateQR = async (req, res) => {
     }
 };
 
+// Helper function to calculate distance using Haversine formula
+const getDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+
+    const R = 6371e3; // metres
+    const φ1 = lat1 * Math.PI / 180; // φ, λ in radians
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+        Math.cos(φ1) * Math.cos(φ2) *
+        Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    const d = R * c; // in metres
+    return d;
+};
+
 // Validate QR token (customer scans static/dynamic QR)
 exports.validateQR = async (req, res) => {
     try {
-        const { token } = req.body;
+        const { token, latitude, longitude } = req.body;
         const customerId = req.user?.id;
 
         if (!customerId) {
@@ -93,6 +113,25 @@ exports.validateQR = async (req, res) => {
             // Create a temporary QRToken for the confirmation flow
             // (so existing checkStatus/confirm/cancel flow keeps working)
             const tempToken = crypto.randomBytes(16).toString('hex');
+
+            // === Geo-Fencing Validation ===
+            if (business.latitude && business.longitude) {
+                if (!latitude || !longitude) {
+                    return res.status(400).json({ error: 'Konum izni gerekli. Lütfen telefonunuzun konumunu açıp tekrar deneyin.' });
+                }
+
+                const distance = getDistance(parseFloat(latitude), parseFloat(longitude), business.latitude, business.longitude);
+
+                // If distance is explicitly calculated and greater than allowed radius
+                const allowedRadius = business.allowedScanRadius || 100;
+                if (distance !== null && distance > allowedRadius) {
+                    console.log(`❌ Geo-Fencing failed: Customer is ${Math.round(distance)}m away from ${business.companyName}`);
+                    return res.status(403).json({
+                        error: 'Konum uyuşmazlığı',
+                        message: `İşleme devam edebilmek için ${business.companyName} mağazasında (${allowedRadius}m yakınında) olmanız gerekmektedir.`
+                    });
+                }
+            }
 
             // Check if this customer has a pending gift_redemption for this business
             const pendingGift = await QRToken.findOne({
@@ -234,9 +273,7 @@ exports.confirmParticipation = async (req, res) => {
         customerBusiness.totalVisits = (customerBusiness.totalVisits || 0) + 1;
         await customerBusiness.save();
 
-        // Create Transaction Record
-        const Transaction = require('../models/Transaction');
-
+        // Create transaction first
         const transaction = await Transaction.create({
             customer: customerId,
             business: businessId,
@@ -248,6 +285,24 @@ exports.confirmParticipation = async (req, res) => {
             purchaseAmount: purchase,
             description: `Damga: ${stampsToAdd}, Puan: ${pointsToAdd} (${purchase} TL alışveriş)`,
             status: 'COMPLETED'
+        });
+
+        // Add Audit Log
+        const adminModel = req.user?.role === 'business' ? 'Business' : 'Admin';
+        await AuditLog.create({
+            adminId: req.user.id,
+            adminModel: adminModel,
+            action: 'CONFIRM_PARTICIPATION',
+            targetId: customerId,
+            targetModel: 'Customer',
+            newData: {
+                stampsAdded: stampsToAdd,
+                pointsAdded: pointsToAdd,
+                purchaseAmount: purchase,
+                transactionId: transaction._id
+            },
+            ipAddress: req.ip,
+            metadata: { method: 'QR_SCAN' }
         });
 
         // Link transaction to QR token

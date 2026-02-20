@@ -1,6 +1,11 @@
 const twilio = require('twilio');
 const Customer = require('../models/Customer');
 const jwt = require('jsonwebtoken');
+const authController = require('./authController');
+
+// Export helper methods from authController or define them again. 
+// Since they are defined inside authController but not exported, let's export them in authController or just reproduce.
+// Actually, I need to export those generators from authController first.
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
@@ -55,9 +60,15 @@ exports.verifyCode = async (req, res) => {
             user.isVerified = true;
             await user.save();
 
-            const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+            const accessToken = authController.generateAccessToken(user._id);
+            const refreshToken = await authController.generateRefreshToken(user._id, 'Customer', req.ip);
 
-            res.json({ status: 'approved', token, user });
+            res.json({
+                status: 'approved',
+                token: accessToken,
+                refreshToken,
+                user
+            });
         } else {
             res.status(400).json({ error: 'Doğrulama kodu hatalı.' });
         }

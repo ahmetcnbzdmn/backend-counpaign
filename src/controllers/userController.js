@@ -149,9 +149,11 @@ exports.deleteUser = async (req, res) => {
         const requestorId = req.user.id;
 
         // Dynamic Imports
+        const Participation = require('../models/Participation');
         const Transaction = require('../models/Transaction');
         const Review = require('../models/Review');
         const QRToken = require('../models/QRToken');
+        const Campaign = require('../models/Campaign'); // Import Campaign for robust delete
 
         // Check if requestor is Super Admin
         const admin = await Admin.findById(requestorId);
@@ -167,7 +169,10 @@ exports.deleteUser = async (req, res) => {
             // 2. Delete All Wallet Connections
             await CustomerBusiness.deleteMany({ customer: userIdToDelete });
 
-            // 3. Delete All Transactions
+            // 3. Delete All Participations
+            await Participation.deleteMany({ customer: userIdToDelete });
+
+            // 4. Delete All Transactions
             await Transaction.deleteMany({ customer: userIdToDelete });
 
             // 5. Delete All Reviews
@@ -186,7 +191,25 @@ exports.deleteUser = async (req, res) => {
             const wallet = await CustomerBusiness.findOneAndDelete({ customer: userIdToDelete, business: requestorId });
             console.log(`- Wallet deleted: ${wallet ? 'Yes' : 'No'}`);
 
-            // 2. Delete Transactions for THIS business
+            // 2. ROBUST DELETE: Participations
+            // Find all campaigns of this business to ensure we delete by Campaign ID too (backup if business field id missing)
+            const businessCampaigns = await Campaign.find({ businessId: requestorId }).select('_id');
+            const campaignIds = businessCampaigns.map(c => c._id);
+            console.log(`- Business has ${campaignIds.length} campaigns. IDs:`, campaignIds);
+
+            const partCount = await Participation.countDocuments({
+                customer: userIdToDelete,
+                $or: [{ business: requestorId }, { campaign: { $in: campaignIds } }]
+            });
+            console.log(`- Participations found: ${partCount}`);
+
+            const partResult = await Participation.deleteMany({
+                customer: userIdToDelete,
+                $or: [{ business: requestorId }, { campaign: { $in: campaignIds } }]
+            });
+            console.log(`- Participations deleted: ${partResult.deletedCount}`);
+
+            // 3. Delete Transactions for THIS business
             const transCount = await Transaction.countDocuments({ customer: userIdToDelete, business: requestorId });
             console.log(`- Transactions found: ${transCount}`);
             const transResult = await Transaction.deleteMany({ customer: userIdToDelete, business: requestorId });
